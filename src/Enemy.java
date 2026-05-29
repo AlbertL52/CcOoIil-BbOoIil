@@ -1,28 +1,30 @@
 import java.awt.image.BufferedImage;
 
-public class Player {
+public class Enemy {
+
     private BufferedImage image;
     private double x;
     private double y;
-    private int width;
-    private int height;
     private double xCenter;
     private double yCenter;
     private double speed;
     private double reload;
     private double spread;
+    private int width;
+    private int height;
+    private int type;
 
-    public Player(BufferedImage image, double size, int x, int y, int speed, double reload, double spread) {
+    public Enemy(BufferedImage image, int type, double size, double x, double y, double speed) {
         this.image = image;
         width = (int) (image.getWidth() * size);
         height = (int) (image.getHeight() * size);
         this.x = x;
         this.y = y;
-        xCenter = x + ((double) width / 2) - 20;
-        yCenter = y + ((double) height / 2) - 20;
+        xCenter = x + ((double) width / 2);
+        yCenter = y + ((double) height / 2);
         this.speed = speed;
-        this.reload = reload;
-        this.spread = spread;
+        this.reload = 0;
+        this.spread = 0;
     }
 
     public BufferedImage getImage() {
@@ -46,7 +48,7 @@ public class Player {
     }
 
     public double updatexCenter() {
-        xCenter = x + (double) width / 2 - (double) width / 7;
+        xCenter = x + (double) width / 2;
         return xCenter;
     }
 
@@ -106,4 +108,6 @@ public class Player {
     public void setSpread(double spread) {
         this.spread = spread;
     }
+
+
 }
