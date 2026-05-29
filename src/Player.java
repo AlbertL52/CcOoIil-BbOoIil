@@ -9,8 +9,10 @@ public class Player {
     private double xCenter;
     private double yCenter;
     private double speed;
+    private double reload;
+    private double spread;
 
-    public Player(BufferedImage image, double size, int x, int y, int speed) {
+    public Player(BufferedImage image, double size, int x, int y, int speed, double reload, double spread) {
         this.image = image;
         width = (int) (image.getWidth() * size);
         height = (int) (image.getHeight() * size);
@@ -19,6 +21,8 @@ public class Player {
         xCenter = x + ((double) width / 2) - 20;
         yCenter = y + ((double) height / 2) - 20;
         this.speed = speed;
+        this.reload = reload;
+        this.spread = spread;
     }
 
     public BufferedImage getImage() {
@@ -55,6 +59,14 @@ public class Player {
         return speed;
     }
 
+    public double getReload() {
+        return reload;
+    }
+
+    public double getSpread() {
+        return spread;
+    }
+
     public void setImage(BufferedImage image) {
         this.image = image;
     }
@@ -85,6 +97,14 @@ public class Player {
 
     public void setSpeed(double speed) {
         this.speed = speed;
+    }
+
+    public void setReload(double reload) {
+        this.reload = reload;
+    }
+
+    public void setSpread(double spread) {
+        this.spread = spread;
     }
 }
 
