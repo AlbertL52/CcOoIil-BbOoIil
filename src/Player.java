@@ -2,25 +2,24 @@ import java.awt.image.BufferedImage;
 
 public class Player {
     private BufferedImage image;
-    private double x;
-    private double y;
-    private int width;
-    private int height;
-    private double xCenter;
-    private double yCenter;
+    private int width, height;
+    private double x, y;
+    private double xCenter, yCenter;
     private double speed;
+    private double health;
     private double reload;
     private double spread;
 
-    public Player(BufferedImage image, double size, int x, int y, int speed, double reload, double spread) {
+    public Player(BufferedImage image, double size, int x, int y, int speed, double health, double reload, double spread) {
         this.image = image;
         width = (int) (image.getWidth() * size);
         height = (int) (image.getHeight() * size);
         this.x = x;
         this.y = y;
-        xCenter = x + ((double) width / 2) - 20;
-        yCenter = y + ((double) height / 2) - 20;
+        xCenter = x + ((double) width / 2) - (double) width / 7;
+        yCenter = y + ((double) height / 2);
         this.speed = speed;
+        this.health = health;
         this.reload = reload;
         this.spread = spread;
     }
@@ -57,6 +56,10 @@ public class Player {
 
     public double getSpeed() {
         return speed;
+    }
+
+    public double getHealth() {
+        return health;
     }
 
     public double getReload() {
@@ -97,6 +100,10 @@ public class Player {
 
     public void setSpeed(double speed) {
         this.speed = speed;
+    }
+
+    public void setHealth(double health) {
+        this.health = health;
     }
 
     public void setReload(double reload) {

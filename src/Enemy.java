@@ -1,21 +1,28 @@
+import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
 
 public class Enemy {
 
     private BufferedImage image;
-    private double x;
-    private double y;
-    private double xCenter;
-    private double yCenter;
+    private int type;
+    private int width, height;
+    private int flashTime; // how long the flash lasts
+    private int maxFlash; // tweak for stronger/weaker flash
+    private double x, y;
+    private double xCenter, yCenter;
+    private double angle;
     private double speed;
+    private double health;
+    private double damage;
+    private double kX, kY;
     private double reload;
     private double spread;
-    private int width;
-    private int height;
-    private int type;
 
-    public Enemy(BufferedImage image, int type, double size, double x, double y, double speed) {
-        this.image = image;
+    public Enemy(int type, double size, double x, double y, double speed, double health, double damage) throws IOException {
+        image = ImageIO.read(new File("src/Enemy" + type + ".png"));
+        this.type = type;
         width = (int) (image.getWidth() * size);
         height = (int) (image.getHeight() * size);
         this.x = x;
@@ -23,12 +30,23 @@ public class Enemy {
         xCenter = x + ((double) width / 2);
         yCenter = y + ((double) height / 2);
         this.speed = speed;
-        this.reload = 0;
-        this.spread = 0;
+        this.health = health;
+        this.damage = damage;
+        flashTime = 0;
+        maxFlash = 8;
+        kX = 0;
+        kY = 0;
+        angle = 0;
+        reload = 0;
+        spread = 0;
     }
 
     public BufferedImage getImage() {
         return image;
+    }
+
+    public int getType() {
+        return type;
     }
 
     public double getX() {
@@ -57,8 +75,28 @@ public class Enemy {
         return yCenter;
     }
 
+    public double getAngle() {
+        return angle;
+    }
+
     public double getSpeed() {
         return speed;
+    }
+
+    public double getHealth() {
+        return health;
+    }
+
+    public double getDamage() {
+        return damage;
+    }
+
+    public double getkX() {
+        return kX;
+    }
+
+    public double getkY() {
+        return kY;
     }
 
     public double getReload() {
@@ -71,6 +109,10 @@ public class Enemy {
 
     public void setImage(BufferedImage image) {
         this.image = image;
+    }
+
+    public void setType(int type) {
+        this.type = type;
     }
 
     public void setX(double x) {
@@ -97,8 +139,20 @@ public class Enemy {
         this.yCenter = yCenter;
     }
 
+    public void setAngle(double angle) {
+        this.angle = angle;
+    }
+
     public void setSpeed(double speed) {
         this.speed = speed;
+    }
+
+    public void setHealth(double health) {
+        this.health = health;
+    }
+
+    public void setDamage(double damage) {
+        this.damage = damage;
     }
 
     public void setReload(double reload) {
@@ -109,5 +163,27 @@ public class Enemy {
         this.spread = spread;
     }
 
+    public void hitFlash() {
+        flashTime = maxFlash;
+    }
 
+    public void updateFlash() {
+        if (flashTime > 0) {
+            flashTime--;
+        }
+    }
+
+    public boolean isFlashing() {
+        return flashTime > 0;
+    }
+
+    public void addKnockback(double x, double y) {
+        kX += x;
+        kY += y;
+    }
+
+    public void dampenKnockback(double d) {
+        kX *= d;
+        kY *= d;
+    }
 }

@@ -2,20 +2,17 @@ import java.awt.image.BufferedImage;
 
 public class Bullet {
     private BufferedImage image;
-    private String type;
-    private double x;
-    private double y;
-    private int width;
-    private int height;
-    private double xCenter;
-    private double yCenter;
-    private double speed;
-    private double xSpeed;
-    private double ySpeed;
+    private int type;
+    private int width, height;
+    private double x, y;
+    private double xCenter, yCenter;
+    private double speed, xSpeed, ySpeed;
+    private double damage;
+    private double knockback;
 
-    public Bullet(BufferedImage image, double x, double y, double size, double speed, double angle) {
+    public Bullet(BufferedImage image, double x, double y, double size, double speed, double angle, double damage, double knockback) {
         this.image = image;
-        this.type = "";
+        this.type = 1;
         this.width = (int) (image.getWidth() * size);
         this.height = (int) (image.getHeight() * size);
         this.x = x;
@@ -25,13 +22,15 @@ public class Bullet {
         this.speed = speed;
         xSpeed = speed * Math.cos(angle);
         ySpeed = speed * Math.sin(angle);
+        this.damage = damage;
+        this.knockback = knockback;
     }
 
     public BufferedImage getImage() {
         return image;
     }
 
-    public String getType() {
+    public int getType() {
         return type;
     }
 
@@ -73,11 +72,19 @@ public class Bullet {
         return ySpeed;
     }
 
+    public double getDamage() {
+        return damage;
+    }
+
+    public double getKnockback() {
+        return knockback;
+    }
+
     public void setImage(BufferedImage image) {
         this.image = image;
     }
 
-    public void setType(String type) {
+    public void setType(int type) {
         this.type = type;
     }
 
@@ -115,5 +122,13 @@ public class Bullet {
 
     public void setySpeed(double ySpeed) {
         this.ySpeed = ySpeed;
+    }
+
+    public void setDamage(double damage) {
+        this.damage = damage;
+    }
+
+    public void setKnockback(double knockback) {
+        this.knockback = knockback;
     }
 }
