@@ -8,11 +8,11 @@ public class Player {
     private double x, y;
     private double xCenter, yCenter;
     private double speed;
-    private double health;
+    private double maxHealth, health;
     private double reload;
     private double spread;
 
-    public Player(BufferedImage image, double size, int x, int y, int speed, double health, double reload, double spread) {
+    public Player(BufferedImage image, double size, int x, int y, int speed, double maxHealth, double reload, double spread) {
         this.image = image;
         width = (int) (image.getWidth() * size);
         height = (int) (image.getHeight() * size);
@@ -23,7 +23,8 @@ public class Player {
         xCenter = x + ((double) width / 2) - (double) width / 7;
         yCenter = y + ((double) height / 2);
         this.speed = speed;
-        this.health = health;
+        this.maxHealth = maxHealth;
+        health = maxHealth;
         this.reload = reload;
         this.spread = spread;
     }
@@ -60,6 +61,10 @@ public class Player {
 
     public double getSpeed() {
         return speed;
+    }
+
+    public double getMaxHealth() {
+        return maxHealth;
     }
 
     public double getHealth() {
@@ -104,6 +109,10 @@ public class Player {
 
     public void setSpeed(double speed) {
         this.speed = speed;
+    }
+
+    public void setMaxFlash(int maxFlash) {
+        this.maxFlash = maxFlash;
     }
 
     public void setHealth(double health) {

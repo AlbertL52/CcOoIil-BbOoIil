@@ -79,6 +79,8 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
     @Override
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
+
+        //draw window
         g.setColor(Color.BLACK);
         g.fillRect(0, 0, WINDOWWIDTH, WINDOWHEIGHT);
         g.setColor(Color.DARK_GRAY);
@@ -86,10 +88,10 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
         g.setColor(Color.LIGHT_GRAY);
         g.fillRect(WINDOWWIDTH / 8, WINDOWHEIGHT / 16, WINDOWWIDTH * 3 / 4, WINDOWHEIGHT * 7 / 8);
         Graphics2D g2d = (Graphics2D) g.create();
+
+        //when lose, display lose and kill all bullets/enemies
         if (gameOver) {
             if (!first) {
-                g.setFont(new Font("Arial", Font.BOLD, 100));
-                g.setColor(Color.BLACK);
                 g.drawString("Kabloomy", 300, 300);
             }
             Iterator<Enemy> ei = enemies.iterator();
@@ -112,10 +114,14 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
             if (gindicators.isEmpty()) {
                 timer.stop();
             }
-        } else {
+        }
+        //when game running
+        else {
+            //drawing bullets
             for (Bullet b : bullets) {
                 g.drawImage(b.getImage(), (int) b.getX(), (int) b.getY(), b.getWidth(), b.getHeight(), null);
             }
+            //drawing enemies, rotated towards player
             for (Enemy e : enemies) {
                 g2d.rotate(e.getAngle(), e.updatexCenter(), e.updateyCenter());
                 g2d.drawImage(e.getImage(), (int) e.getX(), (int) e.getY(), e.getWidth(), e.getHeight(), null);
@@ -127,12 +133,12 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
                 }
                 g2d.rotate(-e.getAngle(), e.updatexCenter(), e.updateyCenter());
             }
+            //drawing spawn indicators
             for (Indicator i : sindicators) {
-                g2d.rotate(i.getAngle(), i.updatexCenter(), i.updateyCenter());
                 g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, (float) i.getAlpha()));
                 g2d.drawImage(i.getImage(), (int) i.getX(), (int) i.getY(), i.getsWidth(), i.getsHeight(), null);
-                g2d.rotate(-i.getAngle(), i.updatexCenter(), i.updateyCenter());
             }
+            //resets image composition, draws image
             g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1f));
             double pxc = player.updatexCenter();
             double pyc = player.updateyCenter();
@@ -146,6 +152,18 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
             }
             g2d.rotate(-angleToMouse, pxc, pyc);
         }
+        //draws arena
+        g.setColor(Color.DARK_GRAY);
+        g.fillRect(WINDOWWIDTH / 128 - borderSize / 2, WINDOWHEIGHT / 64 - borderSize / 2, WINDOWWIDTH * 7 / 64, WINDOWHEIGHT / 32 + borderSize);
+        g.setColor(new Color(255, 0, 0, 200));
+        g.fillRect(WINDOWWIDTH / 128, WINDOWHEIGHT / 64, (int) ((WINDOWWIDTH * 7 / 64.0 - borderSize) * player.getHealth() / player.getMaxHealth()), WINDOWHEIGHT / 32);
+        g.setColor(new Color(153, 0, 0, 100));
+        g.fillRect(WINDOWWIDTH / 128, WINDOWHEIGHT / 64, WINDOWWIDTH * 7 / 64 - borderSize, WINDOWHEIGHT / 32);
+        g.setFont(new Font("Arial", Font.PLAIN, WINDOWHEIGHT / 32));
+        FontMetrics fm = g.getFontMetrics();
+        g.setColor(new Color(255, 255, 255, 200));
+        g.drawString((int) player.getHealth() + "/100", WINDOWWIDTH / 128 + (WINDOWWIDTH * 7 / 64 - borderSize - fm.stringWidth((int) player.getHealth() + "/100")) / 2, WINDOWHEIGHT / 64 + ((WINDOWHEIGHT / 32 - fm.getHeight()) / 2) + fm.getAscent());
+        //
         for (Indicator i : gindicators) {
             if (i.getImage().equals(playerImage)) {
                 g2d.rotate(i.getAngle(), i.updatepxCenter(), i.updateyCenter());
@@ -317,7 +335,7 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
             e.setAngle(angle);
             e.setX(e.getX() + e.getSpeed() * Math.cos(angle) + e.getkX());
             e.setY(e.getY() + e.getSpeed() * Math.sin(angle) + e.getkY());
-            e.dampenKnockback(0.85);
+            e.dampenKnockback(0.9);
         }
     }
 
