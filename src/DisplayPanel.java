@@ -36,7 +36,7 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
 
     public DisplayPanel() throws IOException {
         whiteFlashOp = new RescaleOp(new float[]{0f, 0f, 0f, 1f}, new float[]{255f, 255f, 255f, 0f}, null);
-        playerImage = ImageIO.read(new File("src/Tonk.png"));
+        playerImage = ImageIO.read(new File("src/Tonk1.png"));
         playerSize = 0.5;
         player = new Player(playerImage, playerSize, (int) (WINDOWWIDTH / 2.0 - playerImage.getWidth() / (2 / playerSize) + 20), (int) (WINDOWHEIGHT / 2.0 - playerImage.getHeight() / (2 / playerSize)), 4, 100, 50, 0);
         bulletImage = ImageIO.read(new File("src/Bullet.png"));
@@ -138,6 +138,12 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
             double pyc = player.updateyCenter();
             g2d.rotate(angleToMouse, pxc, pyc);
             g2d.drawImage(player.getImage(), (int) player.getX(), (int) player.getY(), player.getWidth(), player.getHeight(), null);
+            if (player.isFlashing()) {
+                Composite old = g2d.getComposite();
+                g2d.setComposite(AlphaComposite.SrcOver.derive(0.4f));
+                g2d.drawImage(whiteFlashOp.filter(player.getImage(), null), (int) player.getX(), (int) player.getY(), player.getWidth(), player.getHeight(), null);
+                g2d.setComposite(old);
+            }
             g2d.rotate(-angleToMouse, pxc, pyc);
         }
         for (Indicator i : gindicators) {
@@ -145,11 +151,23 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
                 g2d.rotate(i.getAngle(), i.updatepxCenter(), i.updateyCenter());
                 g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, (float) i.getAlpha()));
                 g2d.drawImage(i.getImage(), (int) i.getX(), (int) i.getY(), i.getWidth(), i.getHeight(), null);
+                if (i.isFlashing()) {
+                    Composite old = g2d.getComposite();
+                    g2d.setComposite(AlphaComposite.SrcOver.derive(0.4f));
+                    g2d.drawImage(whiteFlashOp.filter(i.getImage(), null), (int) i.getX(), (int) i.getY(), i.getWidth(), i.getHeight(), null);
+                    g2d.setComposite(old);
+                }
                 g2d.rotate(-i.getAngle(), i.updatepxCenter(), i.updateyCenter());
             } else {
                 g2d.rotate(i.getAngle(), i.updatexCenter(), i.updateyCenter());
                 g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, (float) i.getAlpha()));
                 g2d.drawImage(i.getImage(), (int) i.getX(), (int) i.getY(), i.getWidth(), i.getHeight(), null);
+                if (i.isFlashing()) {
+                    Composite old = g2d.getComposite();
+                    g2d.setComposite(AlphaComposite.SrcOver.derive(0.4f));
+                    g2d.drawImage(whiteFlashOp.filter(i.getImage(), null), (int) i.getX(), (int) i.getY(), i.getWidth(), i.getHeight(), null);
+                    g2d.setComposite(old);
+                }
                 g2d.rotate(-i.getAngle(), i.updatexCenter(), i.updateyCenter());
             }
         }
@@ -211,6 +229,7 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
     }
 
     private void movePlayer() {
+        player.updateFlash();
         double speed = player.getSpeed();
         double diagSpeed = speed * DIAG;
 
@@ -240,7 +259,7 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
         eWasPressed = PRESSEDKEYS[KeyEvent.VK_E];
     }
 
-    private void shoot() {
+    private void shoot() throws IOException {
         double pxc = player.updatexCenter();
         double pyc = player.updateyCenter();
         angleToMouse = Math.atan2(mousePoint.y - pyc, mousePoint.x - pxc);
@@ -248,7 +267,23 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
         if ((PRESSEDKEYS[KeyEvent.VK_SPACE] || autofire) && reload >= (int) player.getReload()) {
             double random = Math.random() * player.getSpread() - player.getSpread() / 2;
             bullets.add(new Bullet(bulletImage, ((pxc - bulletImage.getWidth() * bulletSize / 2) + (player.getWidth() / 2.0 + bulletImage.getWidth() / 3.0 * bulletSize) * Math.cos(angleToMouse)), ((pyc - bulletImage.getHeight() * bulletSize / 2) + (player.getWidth() / 2.0 + bulletImage.getWidth() / 3.0 * bulletSize) * Math.sin(angleToMouse)), bulletSize, bulletSpeed, angleToMouse + random, bulletDamage, bulletKnockback));
+            player.setImage(ImageIO.read(new File("src/Tonk2.png")));
             reload = 0;
+        }
+        if (reload >= player.getReload() * 0.05) {
+            player.setImage(ImageIO.read(new File("src/Tonk3.png")));
+        }
+        if (reload >= player.getReload() * 0.1) {
+            player.setImage(ImageIO.read(new File("src/Tonk4.png")));
+        }
+        if (reload >= player.getReload() * 0.25) {
+            player.setImage(ImageIO.read(new File("src/Tonk3.png")));
+        }
+        if (reload >= player.getReload() * 0.4) {
+            player.setImage(ImageIO.read(new File("src/Tonk2.png")));
+        }
+        if (reload >= player.getReload() * 0.55) {
+            player.setImage(ImageIO.read(new File("src/Tonk1.png")));
         }
     }
 
@@ -298,6 +333,7 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
                     e.setHealth(e.getHealth() - b.getDamage());
                     if (e.getHealth() <= 0) {
                         gindicators.add(new Indicator(e.getImage(), 1, e.getX(), e.getY(), e.getAngle(), 30, 1, 0, 2));
+                        gindicators.getLast().hitFlash();
                         i2.remove();
                     } else {
                         e.hitFlash();
@@ -347,23 +383,32 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
         while (i.hasNext()) {
             Enemy e = i.next();
             if (enemyRect(e).intersects(playerRect())) {
+                player.hitFlash();
                 player.setHealth(player.getHealth() - e.getDamage());
                 gindicators.add(new Indicator(e.getImage(), 1, e.getX(), e.getY(), e.getAngle(), 30, 1, 0, 2));
+                gindicators.getLast().hitFlash();
                 i.remove();
             }
         }
     }
 
     private void updateIndicators() throws IOException {
-        Iterator<Indicator> i = sindicators.iterator();
-        while (i.hasNext()) {
-            Indicator in = i.next();
-            if (in.shrink()) {
-                enemies.add(new Enemy(1, enemySize, in.getOx() + in.getoWidth() / 4.0, in.getOy() + in.getoHeight() / 4.0, enemySpeed, enemyHealth, 100));
-                i.remove();
+        Iterator<Indicator> it = sindicators.iterator();
+        while (it.hasNext()) {
+            Indicator i = it.next();
+            if (i.shrink()) {
+                enemies.add(new Enemy(1, enemySize, i.getOx() + i.getoWidth() / 4.0, i.getOy() + i.getoHeight() / 4.0, enemySpeed, enemyHealth, 10));
+                it.remove();
             }
         }
-        gindicators.removeIf(Indicator::grow);
+        Iterator<Indicator> it2 = gindicators.iterator();
+        while (it2.hasNext()) {
+            Indicator i = it2.next();
+            i.updateFlash();
+            if (i.grow()) {
+                it2.remove();
+            }
+        }
     }
 
     @Override
@@ -387,7 +432,11 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
         moveEnemy();
         movePlayer();
         checkAutofire();
-        shoot();
+        try {
+            shoot();
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
+        }
         moveBullets();
         checkBulletEnemyCollision();
         checkEnemyEnemyCollision();

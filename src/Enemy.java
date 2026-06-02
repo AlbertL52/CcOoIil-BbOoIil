@@ -8,8 +8,8 @@ public class Enemy {
     private BufferedImage image;
     private int type;
     private int width, height;
-    private int flashTime; // how long the flash lasts
-    private int maxFlash; // tweak for stronger/weaker flash
+    private int flashTime;
+    private int maxFlash;
     private double x, y;
     private double xCenter, yCenter;
     private double angle;

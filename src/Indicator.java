@@ -4,6 +4,8 @@ public class Indicator {
     private BufferedImage image;
     private double size;
     private int width, height, oWidth, oHeight;
+    private int flashTime;
+    private int maxFlash;
     private double x, y, ox, oy;
     private double xCenter, yCenter;
     private double angle;
@@ -20,6 +22,8 @@ public class Indicator {
         oWidth = width;
         height = (int) (image.getHeight() * size * alpha);
         oHeight = height;
+        flashTime = 0;
+        maxFlash = 8;
         this.x = x;
         ox = x;
         this.y = y;
@@ -132,6 +136,20 @@ public class Indicator {
 
     public void setAngle(double angle) {
         this.angle = angle;
+    }
+
+    public void hitFlash() {
+        flashTime = maxFlash;
+    }
+
+    public void updateFlash() {
+        if (flashTime > 0) {
+            flashTime--;
+        }
+    }
+
+    public boolean isFlashing() {
+        return flashTime > 0;
     }
 
     public boolean shrink() {

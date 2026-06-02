@@ -3,6 +3,8 @@ import java.awt.image.BufferedImage;
 public class Player {
     private BufferedImage image;
     private int width, height;
+    private int flashTime;
+    private int maxFlash;
     private double x, y;
     private double xCenter, yCenter;
     private double speed;
@@ -14,6 +16,8 @@ public class Player {
         this.image = image;
         width = (int) (image.getWidth() * size);
         height = (int) (image.getHeight() * size);
+        flashTime = 0;
+        maxFlash = 8;
         this.x = x;
         this.y = y;
         xCenter = x + ((double) width / 2) - (double) width / 7;
@@ -112,5 +116,19 @@ public class Player {
 
     public void setSpread(double spread) {
         this.spread = spread;
+    }
+
+    public void hitFlash() {
+        flashTime = maxFlash;
+    }
+
+    public void updateFlash() {
+        if (flashTime > 0) {
+            flashTime--;
+        }
+    }
+
+    public boolean isFlashing() {
+        return flashTime > 0;
     }
 }
