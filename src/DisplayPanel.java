@@ -1,3 +1,4 @@
+import javax.sound.sampled.*;
 import javax.swing.*;
 import javax.imageio.ImageIO;
 import java.awt.*;
@@ -16,13 +17,15 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
     private final double DIAG = 1 / Math.sqrt(2);
     private RescaleOp whiteFlashOp;
     private Player player;
-    private BufferedImage playerImage, bulletImage;
+    private BufferedImage playerImage, playerImage2, playerImage3, playerImage4, bulletImage;
     private int borderSize;
+    private int xp, xpReq;
     private int reload;
-    private int spawnRate, spawnTime;
+    private int spawnDelay, spawnTime;
     private double playerSize;
-    private double bulletSize, bulletSpeed, bulletKnockback, bulletDamage;
-    private double enemySize, enemySpeed, enemyHealth;
+    private int bounces, splinters, penetrations, ricochets;
+    private double bulletSize, bulletSpeed, damage, knockback;
+    private double enemySize, enemySpeed, enemyHealth, enemyDamage;
     private double angleToMouse;
     private Point mousePoint = new Point(0, 0);
     private boolean first;
@@ -36,21 +39,31 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
 
     public DisplayPanel() throws IOException {
         whiteFlashOp = new RescaleOp(new float[]{0f, 0f, 0f, 1f}, new float[]{255f, 255f, 255f, 0f}, null);
-        playerImage = ImageIO.read(new File("src/Tonk1.png"));
+        playerImage = ImageIO.read(new File("src/Player1.png"));
+        playerImage2 = ImageIO.read(new File("src/Player2.png"));
+        playerImage3 = ImageIO.read(new File("src/Player3.png"));
+        playerImage4 = ImageIO.read(new File("src/Player4.png"));
         playerSize = 0.5;
-        player = new Player(playerImage, playerSize, (int) (WINDOWWIDTH / 2.0 - playerImage.getWidth() / (2 / playerSize) + 20), (int) (WINDOWHEIGHT / 2.0 - playerImage.getHeight() / (2 / playerSize)), 4, 100, 50, 0);
+        player = new Player(playerImage, playerSize, (int) (WINDOWWIDTH / 2.0 - playerImage.getWidth() / (2 / playerSize) + 20), (int) (WINDOWHEIGHT / 2.0 - playerImage.getHeight() / (2 / playerSize)), 4, 100, 50, 0, 1);
         bulletImage = ImageIO.read(new File("src/Bullet.png"));
         borderSize = 20;
+        xp = 0;
+        xpReq = 10;
         reload = (int) player.getReload() - 1;
-        spawnRate = 200;
+        spawnDelay = 200;
         spawnTime = 0;
+        bounces = 0;
+        splinters = 0;
+        penetrations = 0;
+        ricochets = 0;
         bulletSize = playerSize * 1.25;
         bulletSpeed = 4;
-        bulletDamage = 20;
-        bulletKnockback = 2;
+        damage = 20;
+        knockback = 2;
         enemySize = 1;
         enemySpeed = 1;
         enemyHealth = 60;
+        enemyDamage = 10;
         first = true;
         gameOver = false;
         eWasPressed = false;
@@ -89,24 +102,21 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
         g.fillRect(WINDOWWIDTH / 8, WINDOWHEIGHT / 16, WINDOWWIDTH * 3 / 4, WINDOWHEIGHT * 7 / 8);
         Graphics2D g2d = (Graphics2D) g.create();
 
-        //when lose, display lose and kill all bullets/enemies
+        //game ends remove all entities
         if (gameOver) {
-            if (!first) {
-                g.drawString("Kabloomy", 300, 300);
-            }
             Iterator<Enemy> ei = enemies.iterator();
             Iterator<Bullet> bi = bullets.iterator();
             while (ei.hasNext()) {
                 Enemy e = ei.next();
                 if (first) {
-                    gindicators.add(new Indicator(e.getImage(), 1, e.getX(), e.getY(), e.getAngle(), 30, 1, 0, 2));
+                    gindicators.add(new Indicator(e.getImage(), enemySize, e.getX(), e.getY(), e.getAngle(), 30, 1, 0, 2));
                 }
                 ei.remove();
             }
             while (bi.hasNext()) {
                 Bullet b = bi.next();
                 if (first) {
-                    gindicators.add(new Indicator(b.getImage(), bulletSize, b.getX(), b.getY(), 0, 30, 1, 0, 2));
+                    gindicators.add(new Indicator(b.getImage(), b.getSize(), b.getX(), b.getY(), 0, 30, 1, 0, 2));
                 }
                 bi.remove();
             }
@@ -115,13 +125,12 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
                 timer.stop();
             }
         }
-        //when game running
         else {
-            //drawing bullets
+            //draw bullets
             for (Bullet b : bullets) {
                 g.drawImage(b.getImage(), (int) b.getX(), (int) b.getY(), b.getWidth(), b.getHeight(), null);
             }
-            //drawing enemies, rotated towards player
+            //draw enemies
             for (Enemy e : enemies) {
                 g2d.rotate(e.getAngle(), e.updatexCenter(), e.updateyCenter());
                 g2d.drawImage(e.getImage(), (int) e.getX(), (int) e.getY(), e.getWidth(), e.getHeight(), null);
@@ -133,12 +142,12 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
                 }
                 g2d.rotate(-e.getAngle(), e.updatexCenter(), e.updateyCenter());
             }
-            //drawing spawn indicators
+            //draw spawn indicators
             for (Indicator i : sindicators) {
                 g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, (float) i.getAlpha()));
                 g2d.drawImage(i.getImage(), (int) i.getX(), (int) i.getY(), i.getsWidth(), i.getsHeight(), null);
             }
-            //resets image composition, draws image
+            //resets image composition, draw player
             g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1f));
             double pxc = player.updatexCenter();
             double pyc = player.updateyCenter();
@@ -152,18 +161,7 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
             }
             g2d.rotate(-angleToMouse, pxc, pyc);
         }
-        //draws arena
-        g.setColor(Color.DARK_GRAY);
-        g.fillRect(WINDOWWIDTH / 128 - borderSize / 2, WINDOWHEIGHT / 64 - borderSize / 2, WINDOWWIDTH * 7 / 64, WINDOWHEIGHT / 32 + borderSize);
-        g.setColor(new Color(255, 0, 0, 200));
-        g.fillRect(WINDOWWIDTH / 128, WINDOWHEIGHT / 64, (int) ((WINDOWWIDTH * 7 / 64.0 - borderSize) * player.getHealth() / player.getMaxHealth()), WINDOWHEIGHT / 32);
-        g.setColor(new Color(153, 0, 0, 100));
-        g.fillRect(WINDOWWIDTH / 128, WINDOWHEIGHT / 64, WINDOWWIDTH * 7 / 64 - borderSize, WINDOWHEIGHT / 32);
-        g.setFont(new Font("Arial", Font.PLAIN, WINDOWHEIGHT / 32));
-        FontMetrics fm = g.getFontMetrics();
-        g.setColor(new Color(255, 255, 255, 200));
-        g.drawString((int) player.getHealth() + "/100", WINDOWWIDTH / 128 + (WINDOWWIDTH * 7 / 64 - borderSize - fm.stringWidth((int) player.getHealth() + "/100")) / 2, WINDOWHEIGHT / 64 + ((WINDOWHEIGHT / 32 - fm.getHeight()) / 2) + fm.getAscent());
-        //
+        //draw death animations
         for (Indicator i : gindicators) {
             if (i.getImage().equals(playerImage)) {
                 g2d.rotate(i.getAngle(), i.updatepxCenter(), i.updateyCenter());
@@ -189,14 +187,49 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
                 g2d.rotate(-i.getAngle(), i.updatexCenter(), i.updateyCenter());
             }
         }
+        //draw health bar
+        g.setColor(Color.DARK_GRAY);
+        g.fillRect(WINDOWWIDTH / 128 - borderSize / 4, WINDOWHEIGHT / 64 - borderSize / 4, WINDOWWIDTH * 7 / 64 - borderSize / 2, WINDOWHEIGHT / 32 + borderSize / 2);
+        g.setColor(new Color(255, 0, 0, 200));
+        g.fillRect(WINDOWWIDTH / 128, WINDOWHEIGHT / 64, (int) ((WINDOWWIDTH * 7 / 64.0 - borderSize) * player.getHealth() / player.getMaxHealth()), WINDOWHEIGHT / 32);
+        g.setColor(new Color(153, 0, 0, 100));
+        g.fillRect(WINDOWWIDTH / 128, WINDOWHEIGHT / 64, WINDOWWIDTH * 7 / 64 - borderSize, WINDOWHEIGHT / 32);
+        g.setFont(new Font("Arial", Font.PLAIN, WINDOWHEIGHT / 32));
+        FontMetrics fm = g.getFontMetrics();
+        g.setColor(new Color(255, 255, 255, 200));
+        g.drawString((int) player.getHealth() + "/" + (int) player.getMaxHealth(), WINDOWWIDTH / 128 + (WINDOWWIDTH * 7 / 64 - borderSize - fm.stringWidth((int) player.getHealth() + "/100")) / 2, WINDOWHEIGHT / 64 + ((WINDOWHEIGHT / 32 - fm.getHeight()) / 2) + fm.getAscent());
+        //draw xp bar
+        g.setColor(Color.DARK_GRAY);
+        g.fillRect(WINDOWWIDTH * 17 / 128 - borderSize / 4, WINDOWHEIGHT * 57 / 64 - borderSize / 4, WINDOWWIDTH * 7 / 64 - borderSize / 2, WINDOWHEIGHT / 32 + borderSize / 2);
+        g.setColor(new Color(255, 255, 255, 200));
+        g.fillRect(WINDOWWIDTH * 17 / 128, WINDOWHEIGHT * 57 / 64, (int) ((WINDOWWIDTH * 7 / 64.0 - borderSize) * xp / xpReq), WINDOWHEIGHT / 32);
+        //draw stats
+        g.setFont(new Font("Arial", Font.PLAIN, WINDOWHEIGHT / 48));
+        g.drawString("player width: " + player.getWidth(), WINDOWWIDTH / 128, WINDOWHEIGHT * 3 / 40);
+        g.drawString("player height: " + player.getHeight(), WINDOWWIDTH / 128, WINDOWHEIGHT / 10);
+        g.drawString("player speed: " + player.getSpeed(), WINDOWWIDTH / 128, WINDOWHEIGHT / 8);
+        g.drawString("reload: " + player.getReload(), WINDOWWIDTH / 128, WINDOWHEIGHT * 3 / 20);
+        g.drawString("spread (r): " + player.getSpread(), WINDOWWIDTH / 128, WINDOWHEIGHT * 7 / 40);
+        g.drawString("projectiles: " + player.getProjectiles(), WINDOWWIDTH / 128, WINDOWHEIGHT / 5);
+        g.drawString("bullet size: " + bulletSize, WINDOWWIDTH / 128, WINDOWHEIGHT * 9 / 40);
+        g.drawString("bullet speed: " + bulletSpeed, WINDOWWIDTH / 128, WINDOWHEIGHT / 4);
+        g.drawString("damage: " + damage, WINDOWWIDTH / 128, WINDOWHEIGHT * 11 / 40);
+        g.drawString("knockback: " + knockback, WINDOWWIDTH / 128, WINDOWHEIGHT * 3 / 10);
+        g.drawString("bounces: " + bounces, WINDOWWIDTH / 128, WINDOWHEIGHT * 13 / 40);
+        g.drawString("splinters: " + splinters, WINDOWWIDTH / 128, WINDOWHEIGHT * 7 / 20);
+        g.drawString("penetrations: " + penetrations, WINDOWWIDTH / 128, WINDOWHEIGHT * 3 / 8);
+        g.drawString("ricochets: " + ricochets, WINDOWWIDTH / 128, WINDOWHEIGHT * 2 / 5);
+
+        g.drawString("Enemy", WINDOWWIDTH * 447 / 500, WINDOWHEIGHT / 20);
+        g.drawString("spawn delay: " + spawnDelay, WINDOWWIDTH * 447 / 500, WINDOWHEIGHT * 3 / 40);
+        g.drawString("size: " + enemySize, WINDOWWIDTH * 447 / 500, WINDOWHEIGHT / 10);
+        g.drawString("speed: " + enemySpeed, WINDOWWIDTH * 447 / 500, WINDOWHEIGHT / 8);
+        g.drawString("health: " + enemyHealth, WINDOWWIDTH * 447 / 500, WINDOWHEIGHT * 3 / 20);
+        g.drawString("damage: " + enemyDamage, WINDOWWIDTH * 447 / 500, WINDOWHEIGHT * 7 / 40);
         g2d.dispose();
     }
 
-    @Override
-    public void keyTyped(KeyEvent e) {
-
-    }
-
+    //check key triggers
     @Override
     public void keyPressed(KeyEvent e) {
         int keyCode = e.getKeyCode();
@@ -207,6 +240,12 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
     public void keyReleased(KeyEvent e) {
         int key = e.getKeyCode();
         PRESSEDKEYS[key] = false;
+    }
+
+    //unused methods
+    @Override
+    public void keyTyped(KeyEvent e) {
+
     }
 
     @Override
@@ -234,6 +273,7 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
 
     }
 
+    //rectangular hitboxes
     private Rectangle playerRect() {
         return new Rectangle((int) player.getX(), (int) player.getY(), player.getWidth(), player.getHeight());
     }
@@ -244,6 +284,22 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
 
     private Rectangle enemyRect(Enemy e) {
         return new Rectangle((int) e.getX(), (int) e.getY(), e.getWidth(), e.getHeight());
+    }
+
+    public static void playSoundWithPitch(String path, float minPitch, float maxPitch) {
+        try {
+            File audioFile = new File(path);
+            AudioInputStream audioInputStream = AudioSystem.getAudioInputStream(audioFile);
+            float pitch = (float) Math.random() * (maxPitch - minPitch) + minPitch;
+            AudioFormat base = audioInputStream.getFormat();
+            AudioFormat pitchedFormat = new AudioFormat(base.getEncoding(), base.getSampleRate() * pitch, base.getSampleSizeInBits(), base.getChannels(), base.getFrameSize(), base.getFrameRate() * pitch, base.isBigEndian());
+            AudioInputStream pitchedStream = AudioSystem.getAudioInputStream(pitchedFormat, audioInputStream);
+            Clip clip = AudioSystem.getClip();
+            clip.open(pitchedStream);
+            clip.start();
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+        }
     }
 
     private void movePlayer() {
@@ -277,31 +333,35 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
         eWasPressed = PRESSEDKEYS[KeyEvent.VK_E];
     }
 
-    private void shoot() throws IOException {
+    private void shoot() throws IOException, UnsupportedAudioFileException, LineUnavailableException {
         double pxc = player.updatexCenter();
         double pyc = player.updateyCenter();
         angleToMouse = Math.atan2(mousePoint.y - pyc, mousePoint.x - pxc);
         reload++;
         if ((PRESSEDKEYS[KeyEvent.VK_SPACE] || autofire) && reload >= (int) player.getReload()) {
-            double random = Math.random() * player.getSpread() - player.getSpread() / 2;
-            bullets.add(new Bullet(bulletImage, ((pxc - bulletImage.getWidth() * bulletSize / 2) + (player.getWidth() / 2.0 + bulletImage.getWidth() / 3.0 * bulletSize) * Math.cos(angleToMouse)), ((pyc - bulletImage.getHeight() * bulletSize / 2) + (player.getWidth() / 2.0 + bulletImage.getWidth() / 3.0 * bulletSize) * Math.sin(angleToMouse)), bulletSize, bulletSpeed, angleToMouse + random, bulletDamage, bulletKnockback));
-            player.setImage(ImageIO.read(new File("src/Tonk2.png")));
+            for (int i = 0; i < player.getProjectiles(); i++) {
+                double random = Math.random() * player.getSpread() - player.getSpread() / 2;
+                bullets.add(new Bullet(bulletImage, ((pxc - bulletImage.getWidth() * bulletSize / 2) + (player.getWidth() / 2.0 + bulletImage.getWidth() / 3.0 * bulletSize) * Math.cos(angleToMouse)), ((pyc - bulletImage.getHeight() * bulletSize / 2) + (player.getWidth() / 2.0 + bulletImage.getWidth() / 3.0 * bulletSize) * Math.sin(angleToMouse)), bulletSize, bulletSpeed, angleToMouse + random, damage, knockback, bounces, splinters, penetrations, ricochets));
+            }
+            playSoundWithPitch("src/shoot.wav", 0.02f, 0.05f);
+            player.setImage(playerImage2);
             reload = 0;
         }
+        //firing animation
         if (reload >= player.getReload() * 0.05) {
-            player.setImage(ImageIO.read(new File("src/Tonk3.png")));
+            player.setImage(playerImage3);
         }
         if (reload >= player.getReload() * 0.1) {
-            player.setImage(ImageIO.read(new File("src/Tonk4.png")));
+            player.setImage(playerImage4);
         }
         if (reload >= player.getReload() * 0.25) {
-            player.setImage(ImageIO.read(new File("src/Tonk3.png")));
+            player.setImage(playerImage3);
         }
         if (reload >= player.getReload() * 0.4) {
-            player.setImage(ImageIO.read(new File("src/Tonk2.png")));
+            player.setImage(playerImage2);
         }
         if (reload >= player.getReload() * 0.55) {
-            player.setImage(ImageIO.read(new File("src/Tonk1.png")));
+            player.setImage(playerImage);
         }
     }
 
@@ -313,6 +373,17 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
             b.setY(b.getY() + b.getySpeed());
             double bxc = b.updatexCenter();
             double byc = b.updateyCenter();
+            //update bounces
+            if (b.getBounces() > 0) {
+                if (bxc < WINDOWWIDTH / 8.0 || bxc > WINDOWWIDTH * 7 / 8.0) {
+                    b.setxSpeed(-b.getxSpeed());
+                    b.setBounces(b.getBounces() - 1);
+                } else if (byc < WINDOWHEIGHT / 16.0 || byc > WINDOWHEIGHT * 15 / 16.0) {
+                    b.setySpeed(-b.getySpeed());
+                    b.setBounces(b.getBounces() - 1);
+                }
+            }
+            //out of bounds
             if (bxc < 0 || bxc > WINDOWWIDTH || byc < 0 || byc > WINDOWHEIGHT) {
                 i.remove();
             }
@@ -321,10 +392,10 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
 
     public void spawnEnemy() throws IOException {
         spawnTime++;
-        if (spawnTime == spawnRate) {
+        if (spawnTime == spawnDelay) {
             spawnTime = 0;
             BufferedImage image = ImageIO.read(new File("src/Enemy" + 1 + ".png"));
-            sindicators.add(new Indicator(image, 2, Math.random() * (WINDOWWIDTH * 3 / 4.0 - image.getWidth()) + WINDOWWIDTH / 8.0 - image.getWidth() / 4.0, Math.random() * (WINDOWHEIGHT * 7 / 8.0 - image.getHeight()) + WINDOWHEIGHT / 16.0 - image.getHeight() / 4.0, 0, 30, 0.1, 5, 0));
+            sindicators.add(new Indicator(image, enemySize * 2, Math.random() * (WINDOWWIDTH * 3 / 4.0 - image.getWidth() * enemySize) + WINDOWWIDTH / 8.0 - image.getWidth() * enemySize / 4.0, Math.random() * (WINDOWHEIGHT * 7 / 8.0 - image.getHeight() * enemySize) + WINDOWHEIGHT / 16.0 - image.getHeight() * enemySize / 4.0, 0, 30, 0.1, 5, 0));
         }
     }
 
@@ -340,26 +411,72 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
     }
 
     private void checkBulletEnemyCollision() {
+        ArrayList<Enemy> es = new ArrayList<>();
+        ArrayList<Bullet> bs = new ArrayList<>();
         Iterator<Bullet> i = bullets.iterator();
         while (i.hasNext()) {
             Bullet b = i.next();
             Iterator<Enemy> i2 = enemies.iterator();
             while (i2.hasNext()) {
                 Enemy e = i2.next();
-                if ((bulletRect(b).intersects(enemyRect(e)))) {
-                    i.remove();
+                if ((bulletRect(b).intersects(enemyRect(e))) && ((e.getkX() == 0 && e.getkY() == 0) || !b.hit())) {
+                    if (b.getSplinters() > 0) {
+                        es.add(e);
+                        bs.add(new Bullet(b.getImage(), e.updatexCenter(), e.updateyCenter(), b.getSize() * 0.75, b.getSpeed(), 0, b.getDamage() / 2, b.getKnockback() / 2, b.getBounces(), b.getSplinters(), b.getPenetrations(), b.getRicochets()));
+                    }
                     e.setHealth(e.getHealth() - b.getDamage());
                     if (e.getHealth() <= 0) {
-                        gindicators.add(new Indicator(e.getImage(), 1, e.getX(), e.getY(), e.getAngle(), 30, 1, 0, 2));
+                        gindicators.add(new Indicator(e.getImage(), enemySize, e.getX(), e.getY(), e.getAngle(), 30, 1, 0, 2));
                         gindicators.getLast().hitFlash();
+                        xp += e.getXp();
                         i2.remove();
                     } else {
                         e.hitFlash();
                         double a = Math.atan2(e.updateyCenter() - b.updateyCenter(), e.updatexCenter() - b.updatexCenter());
                         e.addKnockback(b.getKnockback() * Math.cos(a), b.getKnockback() * Math.sin(a));
                     }
+                    if (b.getPenetrations() <= 0 && b.getRicochets() <= 0) {
+                        i.remove();
+                    }
+                    if (b.getRicochets() > 0) {
+                        double d = Double.MAX_VALUE;
+                        double min = d;
+                        Enemy ce = null;
+                        for (Enemy enemy : enemies) {
+                            if (enemy == e) {
+                                continue;
+                            }
+                            d = enemy.getDistance(b.getX(), b.getY());
+                            if (d < min) {
+                                min = d;
+                                ce = enemy;
+                            }
+                        }
+                        if (ce != null) {
+                            double a = Math.atan2(ce.updateyCenter() - b.updateyCenter(), ce.updatexCenter() - b.updatexCenter());
+                            b.setxSpeed(b.getSpeed() * Math.cos(a));
+                            b.setySpeed(b.getSpeed() * Math.sin(a));
+                            b.setRicochets(b.getRicochets() - 1);
+                        }
+                    } else {
+                        b.setPenetrations(b.getPenetrations() - 1);
+                    }
+                    b.setHit(true);
                     break;
                 }
+            }
+        }
+        //apply splinters
+        for (int n = 0; n < es.size(); n++) {
+            for (int s = 0; s < bs.get(n).getSplinters(); s++) {
+                bs.get(n).setAngle(Math.random() * Math.PI * 2);
+                while (enemyRect(es.get(n)).intersects(bs.get(n).getX(), bs.get(n).getY(), bs.get(n).getWidth(), bs.get(n).getHeight())) {
+                    bs.get(n).setX(bs.get(n).getX() + bs.get(n).getxSpeed() * 2);
+                    bs.get(n).setY(bs.get(n).getY() + bs.get(n).getySpeed() * 2);
+                }
+                bs.get(n).setX(bs.get(n).getX() + bs.get(n).getxSpeed() * 2);
+                bs.get(n).setY(bs.get(n).getY() + bs.get(n).getySpeed() * 2);
+                bullets.add(new Bullet(bs.get(n).getImage(), bs.get(n).getX(), bs.get(n).getY(), bs.get(n).getSize(), bs.get(n).getSpeed(), bs.get(n).getAngle(), bs.get(n).getDamage(), bs.get(n).getKnockback(), bs.get(n).getBounces(), 0, bs.get(n).getPenetrations(), bs.get(n).getRicochets()));
             }
         }
     }
@@ -403,7 +520,7 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
             if (enemyRect(e).intersects(playerRect())) {
                 player.hitFlash();
                 player.setHealth(player.getHealth() - e.getDamage());
-                gindicators.add(new Indicator(e.getImage(), 1, e.getX(), e.getY(), e.getAngle(), 30, 1, 0, 2));
+                gindicators.add(new Indicator(e.getImage(), enemySize, e.getX(), e.getY(), e.getAngle(), 30, 1, 0, 2));
                 gindicators.getLast().hitFlash();
                 i.remove();
             }
@@ -411,14 +528,16 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
     }
 
     private void updateIndicators() throws IOException {
+        //spawn indicators
         Iterator<Indicator> it = sindicators.iterator();
         while (it.hasNext()) {
             Indicator i = it.next();
             if (i.shrink()) {
-                enemies.add(new Enemy(1, enemySize, i.getOx() + i.getoWidth() / 4.0, i.getOy() + i.getoHeight() / 4.0, enemySpeed, enemyHealth, 10));
+                enemies.add(new Enemy(1, enemySize, i.getOx() + i.getoWidth() / 4.0, i.getOy() + i.getoHeight() / 4.0, enemySpeed, enemyHealth, enemyDamage));
                 it.remove();
             }
         }
+        //death animations
         Iterator<Indicator> it2 = gindicators.iterator();
         while (it2.hasNext()) {
             Indicator i = it2.next();
@@ -429,9 +548,17 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
         }
     }
 
+    private void upgrade() {
+        if (xp >= xpReq) {
+            xp = 0;
+            xpReq++;
+        }
+    }
+
+    //timer ticks
     @Override
     public void actionPerformed(ActionEvent e) {
-        if (player.getHealth() <= 0) {
+        if ((int) player.getHealth() <= 0) {
             if (!gameOver) {
                 gindicators.add(new Indicator(player.getImage(), playerSize, player.getX(), player.getY(), angleToMouse, 30, 1, 0, 2));
             }
@@ -452,7 +579,7 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
         checkAutofire();
         try {
             shoot();
-        } catch (IOException ex) {
+        } catch (IOException | UnsupportedAudioFileException | LineUnavailableException ex) {
             throw new RuntimeException(ex);
         }
         moveBullets();
@@ -460,6 +587,7 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
         checkEnemyEnemyCollision();
         checkEnemyBorderCollision();
         checkEnemyPlayerCollision();
+        upgrade();
         repaint();
     }
 }

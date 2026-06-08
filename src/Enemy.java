@@ -10,6 +10,8 @@ public class Enemy {
     private int width, height;
     private int flashTime;
     private int maxFlash;
+    private int xp;
+    private double size;
     private double x, y;
     private double xCenter, yCenter;
     private double angle;
@@ -25,6 +27,7 @@ public class Enemy {
         this.type = type;
         width = (int) (image.getWidth() * size);
         height = (int) (image.getHeight() * size);
+        this.size = size;
         this.x = x;
         this.y = y;
         xCenter = x + ((double) width / 2);
@@ -39,6 +42,9 @@ public class Enemy {
         angle = 0;
         reload = 0;
         spread = 0;
+        if (type == 1) {
+            xp = 1;
+        }
     }
 
     public BufferedImage getImage() {
@@ -47,6 +53,10 @@ public class Enemy {
 
     public int getType() {
         return type;
+    }
+
+    public double getSize() {
+        return size;
     }
 
     public double getX() {
@@ -63,6 +73,10 @@ public class Enemy {
 
     public int getHeight() {
         return height;
+    }
+
+    public int getXp() {
+        return xp;
     }
 
     public double updatexCenter() {
@@ -107,12 +121,20 @@ public class Enemy {
         return spread;
     }
 
+    public double getDistance(double x, double y) {
+        return Math.sqrt(Math.pow(this.x - x, 2) + Math.pow(this.y - y, 2));
+    }
+
     public void setImage(BufferedImage image) {
         this.image = image;
     }
 
     public void setType(int type) {
         this.type = type;
+    }
+
+    public void setSize(double size) {
+        this.size = size;
     }
 
     public void setX(double x) {
@@ -129,6 +151,10 @@ public class Enemy {
 
     public void setHeight(int height) {
         this.height = height;
+    }
+
+    public void setXp(int xp) {
+        this.xp = xp;
     }
 
     public void setxCenter(double xCenter) {
@@ -185,5 +211,11 @@ public class Enemy {
     public void dampenKnockback(double d) {
         kX *= d;
         kY *= d;
+        if (kX < 0.1 && kX > -0.1) {
+            kX = 0;
+        }
+        if (kY < 0.1 && kY > -0.1) {
+            kY = 0;
+        }
     }
 }

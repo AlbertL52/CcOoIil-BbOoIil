@@ -5,6 +5,7 @@ public class Player {
     private int width, height;
     private int flashTime;
     private int maxFlash;
+    private int projectiles;
     private double x, y;
     private double xCenter, yCenter;
     private double speed;
@@ -12,7 +13,7 @@ public class Player {
     private double reload;
     private double spread;
 
-    public Player(BufferedImage image, double size, int x, int y, int speed, double maxHealth, double reload, double spread) {
+    public Player(BufferedImage image, double size, int x, int y, int speed, double maxHealth, double reload, double spread, int projectiles) {
         this.image = image;
         width = (int) (image.getWidth() * size);
         height = (int) (image.getHeight() * size);
@@ -27,6 +28,7 @@ public class Player {
         health = maxHealth;
         this.reload = reload;
         this.spread = spread;
+        this.projectiles = projectiles;
     }
 
     public BufferedImage getImage() {
@@ -79,6 +81,10 @@ public class Player {
         return spread;
     }
 
+    public int getProjectiles() {
+        return projectiles;
+    }
+
     public void setImage(BufferedImage image) {
         this.image = image;
     }
@@ -115,6 +121,10 @@ public class Player {
         this.maxFlash = maxFlash;
     }
 
+    public void setMaxHealth(double maxHealth) {
+        this.maxHealth = maxHealth;
+    }
+
     public void setHealth(double health) {
         this.health = health;
     }
@@ -125,6 +135,10 @@ public class Player {
 
     public void setSpread(double spread) {
         this.spread = spread;
+    }
+
+    public void setProjectiles(int projectiles) {
+        this.projectiles = projectiles;
     }
 
     public void hitFlash() {
