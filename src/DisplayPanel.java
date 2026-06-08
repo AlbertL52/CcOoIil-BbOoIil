@@ -36,6 +36,10 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
     private ArrayList<Indicator> gindicators;
     private ArrayList<Bullet> bullets;
     private ArrayList<Enemy> enemies;
+    private JButton resetButton;
+    private JButton upgrade1;
+    private JButton upgrade2;
+    private JButton upgrade3;
 
     public DisplayPanel() throws IOException {
         whiteFlashOp = new RescaleOp(new float[]{0f, 0f, 0f, 1f}, new float[]{255f, 255f, 255f, 0f}, null);
@@ -50,13 +54,13 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
         xp = 0;
         xpReq = 10;
         reload = (int) player.getReload() - 1;
-        spawnDelay = 200;
+        spawnDelay = 2;
         spawnTime = 0;
-        bounces = 0;
-        splinters = 0;
-        penetrations = 0;
-        ricochets = 0;
-        bulletSize = playerSize * 1.25;
+        bounces = 100;
+        splinters = 100;
+        penetrations = 1;
+        ricochets = 1;
+        bulletSize = playerSize * 10.25;
         bulletSpeed = 4;
         damage = 20;
         knockback = 2;
@@ -73,6 +77,12 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
         sindicators = new ArrayList<>();
         gindicators = new ArrayList<>();
         timer = new Timer(8, this);
+        resetButton = new JButton("Reset");
+        add(resetButton);
+        resetButton.addActionListener(this);
+        resetButton.setVisible(true);
+        upgrade1.addActionListener(this);
+        upgrade1.setVisible(true);
         addMouseMotionListener(new MouseAdapter() {
             @Override
             public void mouseMoved(MouseEvent e) {
@@ -92,6 +102,9 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
     @Override
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
+
+        resetButton.setLocation(40, 60);
+
 
         //draw window
         g.setColor(Color.BLACK);
@@ -201,6 +214,8 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
         //draw xp bar
         g.setColor(Color.DARK_GRAY);
         g.fillRect(WINDOWWIDTH * 17 / 128 - borderSize / 4, WINDOWHEIGHT * 57 / 64 - borderSize / 4, WINDOWWIDTH * 7 / 64 - borderSize / 2, WINDOWHEIGHT / 32 + borderSize / 2);
+        g.setColor(new Color(150, 150, 150, 200));
+        g.fillRect(WINDOWWIDTH * 17 / 128, WINDOWHEIGHT * 57 / 64, (int) (WINDOWWIDTH * 7 / 64.0 - borderSize), WINDOWHEIGHT / 32);
         g.setColor(new Color(255, 255, 255, 200));
         g.fillRect(WINDOWWIDTH * 17 / 128, WINDOWHEIGHT * 57 / 64, (int) ((WINDOWWIDTH * 7 / 64.0 - borderSize) * xp / xpReq), WINDOWHEIGHT / 32);
         //draw stats
@@ -378,7 +393,7 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
                 if (bxc < WINDOWWIDTH / 8.0 || bxc > WINDOWWIDTH * 7 / 8.0) {
                     b.setxSpeed(-b.getxSpeed());
                     b.setBounces(b.getBounces() - 1);
-                } else if (byc < WINDOWHEIGHT / 16.0 || byc > WINDOWHEIGHT * 15 / 16.0) {
+                } else if (byc <= WINDOWHEIGHT / 16.0 || byc >= WINDOWHEIGHT * 15 / 16.0) {
                     b.setySpeed(-b.getySpeed());
                     b.setBounces(b.getBounces() - 1);
                 }
@@ -422,7 +437,9 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
                 if ((bulletRect(b).intersects(enemyRect(e))) && ((e.getkX() == 0 && e.getkY() == 0) || !b.hit())) {
                     if (b.getSplinters() > 0) {
                         es.add(e);
-                        bs.add(new Bullet(b.getImage(), e.updatexCenter(), e.updateyCenter(), b.getSize() * 0.75, b.getSpeed(), 0, b.getDamage() / 2, b.getKnockback() / 2, b.getBounces(), b.getSplinters(), b.getPenetrations(), b.getRicochets()));
+                        for (int s = 0; s < b.getSplinters(); s++) {
+                            bs.add(new Bullet(b.getImage(), e.updatexCenter(), e.updateyCenter(), b.getSize() * 0.75, b.getSpeed(), Math.random() * Math.PI * 2, b.getDamage() / 2, b.getKnockback() / 2, b.getBounces(), b.getSplinters(), b.getPenetrations(), b.getRicochets()));
+                        }
                     }
                     e.setHealth(e.getHealth() - b.getDamage());
                     if (e.getHealth() <= 0) {
@@ -467,17 +484,14 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
             }
         }
         //apply splinters
-        for (int n = 0; n < es.size(); n++) {
-            for (int s = 0; s < bs.get(n).getSplinters(); s++) {
-                bs.get(n).setAngle(Math.random() * Math.PI * 2);
-                while (enemyRect(es.get(n)).intersects(bs.get(n).getX(), bs.get(n).getY(), bs.get(n).getWidth(), bs.get(n).getHeight())) {
-                    bs.get(n).setX(bs.get(n).getX() + bs.get(n).getxSpeed() * 2);
-                    bs.get(n).setY(bs.get(n).getY() + bs.get(n).getySpeed() * 2);
-                }
-                bs.get(n).setX(bs.get(n).getX() + bs.get(n).getxSpeed() * 2);
-                bs.get(n).setY(bs.get(n).getY() + bs.get(n).getySpeed() * 2);
-                bullets.add(new Bullet(bs.get(n).getImage(), bs.get(n).getX(), bs.get(n).getY(), bs.get(n).getSize(), bs.get(n).getSpeed(), bs.get(n).getAngle(), bs.get(n).getDamage(), bs.get(n).getKnockback(), bs.get(n).getBounces(), 0, bs.get(n).getPenetrations(), bs.get(n).getRicochets()));
+        for (int n = 0; n < bs.size(); n++) {
+            while (enemyRect(es.get(n / splinters)).intersects(bs.get(n).getX(), bs.get(n).getY(), bs.get(n).getWidth(), bs.get(n).getHeight())) {
+                bs.get(n).setX(bs.get(n).getX() + bs.get(n).getSpeed() * Math.cos(bs.get(n).getAngle()));
+                bs.get(n).setY(bs.get(n).getY() + bs.get(n).getSpeed() * Math.sin(bs.get(n).getAngle()));
             }
+            bs.get(n).setX(bs.get(n).getX() + bs.get(n).getSpeed() * Math.cos(bs.get(n).getAngle()));
+            bs.get(n).setY(bs.get(n).getY() + bs.get(n).getSpeed() * Math.sin(bs.get(n).getAngle()));
+            bullets.add(new Bullet(bs.get(n).getImage(), bs.get(n).getX(), bs.get(n).getY(), bs.get(n).getSize(), bs.get(n).getSpeed(), bs.get(n).getAngle(), bs.get(n).getDamage(), bs.get(n).getKnockback(), bs.get(n).getBounces(), 0, bs.get(n).getPenetrations(), bs.get(n).getRicochets()));
         }
     }
 
@@ -552,12 +566,53 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
         if (xp >= xpReq) {
             xp = 0;
             xpReq++;
+            upgrade1 = new JButton("1");
+            add(upgrade1);
+            upgrade1.setLocation(WINDOWWIDTH / 2, WINDOWHEIGHT / 2);
         }
+    }
+
+    private void upgradeButton() {
+
+    }
+
+    private void reset() {
+        gameOver = false;
+        xp = 0;
+        xpReq = 10;
+        player.setMaxHealth(100);
+        player.setHealth(100);
+        player.setSize(1);
+        player.setReload(50);
+        reload = (int) player.getReload() - 1;
+        spawnDelay = 2;
+        spawnTime = 0;
+        bounces = 100;
+        splinters = 100;
+        penetrations = 1;
+        ricochets = 1;
+        bulletSize = playerSize * 10.25;
+        bulletSpeed = 4;
+        damage = 20;
+        knockback = 2;
+        enemySize = 1;
+        enemySpeed = 1;
+        enemyHealth = 60;
+        enemyDamage = 10;
+        first = false;
+        requestFocusInWindow();
+        timer.start();
     }
 
     //timer ticks
     @Override
     public void actionPerformed(ActionEvent e) {
+        if (e.getSource() == resetButton) {
+            reset();
+        }
+        if (e.getSource() == upgrade1) {
+            upgradeButton();
+        }
         if ((int) player.getHealth() <= 0) {
             if (!gameOver) {
                 gindicators.add(new Indicator(player.getImage(), playerSize, player.getX(), player.getY(), angleToMouse, 30, 1, 0, 2));

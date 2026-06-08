@@ -84,12 +84,10 @@ public class Bullet {
     }
 
     public double getxSpeed() {
-        xSpeed = speed * Math.cos(angle);
         return xSpeed;
     }
 
     public double getySpeed() {
-        ySpeed = speed * Math.sin(angle);
         return ySpeed;
     }
 
