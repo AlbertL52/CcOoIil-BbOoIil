@@ -50,10 +50,12 @@ public class Player {
     }
 
     public int getWidth() {
+        width = (int) (image.getWidth() * size);
         return width;
     }
 
     public int getHeight() {
+        height = (int) (image.getHeight() * size);
         return height;
     }
 
@@ -67,8 +69,16 @@ public class Player {
         return yCenter;
     }
 
+    public double getDistance(double x, double y) {
+        return Math.sqrt(Math.pow(updatexCenter() - x, 2) + Math.pow(updateyCenter() - y, 2));
+    }
+
     public double getSpeed() {
         return speed;
+    }
+
+    public double getRoundedSpeed() {
+        return (double) (int) (speed * 100) / 100;
     }
 
     public double getMaxHealth() {
@@ -83,8 +93,16 @@ public class Player {
         return reload;
     }
 
+    public double getRoundedReload() {
+        return (double) (int) (reload * 100) / 100;
+    }
+
     public double getSpread() {
         return spread;
+    }
+
+    public double getRoundedSpread() {
+        return (double) (int) (spread * 100) / 100;
     }
 
     public int getProjectiles() {

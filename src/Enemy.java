@@ -122,7 +122,7 @@ public class Enemy {
     }
 
     public double getDistance(double x, double y) {
-        return Math.sqrt(Math.pow(this.x - x, 2) + Math.pow(this.y - y, 2));
+        return Math.sqrt(Math.pow(updatexCenter() - x, 2) + Math.pow(updateyCenter() - y, 2));
     }
 
     public void setImage(BufferedImage image) {
