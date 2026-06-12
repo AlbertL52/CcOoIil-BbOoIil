@@ -1,58 +1,56 @@
 import javax.imageio.ImageIO;
+import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.io.File;
 import java.io.IOException;
 
 public class Enemy {
 
-    private BufferedImage image;
-    private int type;
+    private BufferedImage image, bulletImage;
     private int width, height;
-    private int flashTime;
-    private int maxFlash;
-    private int xp;
+    private int flashTime, maxFlash;
     private double size;
     private double x, y;
+    private double xp;
     private double xCenter, yCenter;
     private double angle;
     private double speed;
     private double health;
     private double damage;
     private double kX, kY;
-    private double reload;
-    private double spread;
+    private int projectiles, bounces;
+    private double reload, spread, bulletSize, bulletSpeed;
+    private Rectangle rect;
 
-    public Enemy(int type, double size, double x, double y, double speed, double health, double damage) throws IOException {
-        image = ImageIO.read(new File("src/Enemy" + type + ".png"));
-        this.type = type;
-        width = (int) (image.getWidth() * size);
-        height = (int) (image.getHeight() * size);
+    public Enemy(BufferedImage image, double size, double x, double y, double xp, double speed, double health, double damage, BufferedImage bulletImage, int projectiles, int bounces, double reload, double spread, double bulletSize, double bulletSpeed) throws IOException {
+        this.image = image;
+        this.xp = xp;
         this.size = size;
         this.x = x;
         this.y = y;
-        xCenter = x + ((double) width / 2);
-        yCenter = y + ((double) height / 2);
         this.speed = speed;
         this.health = health;
         this.damage = damage;
+        this.bulletImage = bulletImage;
+        this.projectiles = projectiles;
+        this.bounces = bounces;
+        this.reload = reload;
+        this.spread = spread;
+        this.bulletSize = bulletSize;
+        this.bulletSpeed = bulletSpeed;
+        width = (int) (image.getWidth() * size);
+        height = (int) (image.getHeight() * size);
+        xCenter = x + ((double) width / 2);
+        yCenter = y + ((double) height / 2);
         flashTime = 0;
         maxFlash = 8;
         kX = 0;
         kY = 0;
         angle = 0;
-        reload = 0;
-        spread = 0;
-        if (type == 1) {
-            xp = 1;
-        }
+        rect = new Rectangle((int) x, (int) y, width, height);
     }
 
     public BufferedImage getImage() {
         return image;
-    }
-
-    public int getType() {
-        return type;
     }
 
     public double getSize() {
@@ -75,7 +73,7 @@ public class Enemy {
         return height;
     }
 
-    public int getXp() {
+    public double getXp() {
         return xp;
     }
 
@@ -113,6 +111,18 @@ public class Enemy {
         return kY;
     }
 
+    public BufferedImage getBulletImage() {
+        return bulletImage;
+    }
+
+    public int getProjectiles() {
+        return projectiles;
+    }
+
+    public int getBounces() {
+        return bounces;
+    }
+
     public double getReload() {
         return reload;
     }
@@ -121,16 +131,25 @@ public class Enemy {
         return spread;
     }
 
+    public double getBulletSize() {
+        return bulletSize;
+    }
+
+    public double getBulletSpeed() {
+        return bulletSpeed;
+    }
+
     public double getDistance(double x, double y) {
         return Math.sqrt(Math.pow(updatexCenter() - x, 2) + Math.pow(updateyCenter() - y, 2));
     }
 
-    public void setImage(BufferedImage image) {
-        this.image = image;
+    public Rectangle getRect() {
+        rect.setBounds((int) x, (int) y, width, height);
+        return rect;
     }
 
-    public void setType(int type) {
-        this.type = type;
+    public void setImage(BufferedImage image) {
+        this.image = image;
     }
 
     public void setSize(double size) {

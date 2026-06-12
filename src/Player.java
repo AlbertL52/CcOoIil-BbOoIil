@@ -1,3 +1,4 @@
+import java.awt.*;
 import java.awt.image.BufferedImage;
 
 public class Player {
@@ -13,8 +14,9 @@ public class Player {
     private double maxHealth, health;
     private double reload;
     private double spread;
+    private Rectangle rect;
 
-    public Player(BufferedImage image, double size, int x, int y, int speed, double maxHealth, double reload, double spread, int projectiles) {
+    public Player(BufferedImage image, double size, double x, double y, int speed, double maxHealth, double reload, double spread, int projectiles) {
         this.image = image;
         this.size = size;
         width = (int) (image.getWidth() * size);
@@ -31,6 +33,7 @@ public class Player {
         this.reload = reload;
         this.spread = spread;
         this.projectiles = projectiles;
+        rect = new Rectangle((int) x, (int) y, width, height);
     }
 
     public BufferedImage getImage() {
@@ -107,6 +110,11 @@ public class Player {
 
     public int getProjectiles() {
         return projectiles;
+    }
+
+    public Rectangle getRect() {
+        rect.setBounds((int) x, (int) y, width, height);
+        return rect;
     }
 
     public void setImage(BufferedImage image) {
