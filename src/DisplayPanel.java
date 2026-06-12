@@ -33,7 +33,7 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
     private ArrayList<Double> spawnTimes = new ArrayList<>(), spawnDelays = new ArrayList<>();
     private int bounces = 0, splinters = 0, penetrations = 0, ricochets = 0;
     private double bulletSize = player.getSize() * 1.25, bulletSpeed = 4, damage = 20, knockback = 2;
-    private double baseSpawnDelay = 200, baseEnemySize = 1, baseEnemySpeed = 1, baseEnemyHealth = 60, baseEnemyDamage = 10, baseEnemyRandom = 1;
+    private double baseSpawnDelay = 250, baseEnemySize = 1, baseEnemySpeed = 1, baseEnemyHealth = 60, baseEnemyDamage = 10, baseEnemyRandom = 1;
     private double spawnDelay, enemySize, enemySpeed, enemyHealth, enemyDamage, enemyRandom;
     private double angleToMouse;
     private boolean first = true, gameOver = false, eWasPressed = false, autofire = false, paused = false;
@@ -43,19 +43,19 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
     public DisplayPanel() throws IOException {
         for (int i = 0; i < 2; i++) {
             spawnTimes.add(0.0);
-            spawnDelays.add(0.0);
+            spawnDelays.add(baseSpawnDelay);
         }
         commonUpgrades.add(new Upgrade(new ImageIcon("src/velocity.png"), 0.5, WINDOW_WIDTH / 4.0, WINDOW_HEIGHT / 4.0, 0, 0, 0, 0, 0, 0, 0, 0, 0.000002, 0.0000005, 0, 0, 0, 0, 0, "Velocity:\n+20% Bullet Speed\n+5% Damage"));
-        commonUpgrades.add(new Upgrade(new ImageIcon("src/biggerbullets.png"), 0.5, WINDOW_WIDTH / 4.0, WINDOW_HEIGHT / 4.0, 0, 0, 0, 0, 0, 0, 0, 0.0000025, 0, 0, 0, 0, 0, 0, 0, "Bigger Bullets:\n+25% Bullet Size"));
-        commonUpgrades.add(new Upgrade(new ImageIcon("src/knockback.png"), 0.5, WINDOW_WIDTH / 4.0, WINDOW_HEIGHT / 4.0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, "Knockback:\n+1 Knockback"));
+        commonUpgrades.add(new Upgrade(new ImageIcon("src/biggerbullets.png"), 0.5, WINDOW_WIDTH / 4.0, WINDOW_HEIGHT / 4.0, 0, 0, 0, 0, 0, 0, 0, 0.0000030, 0, 0, 0, 0, 0, 0, 0, "Bigger Bullets:\n+30% Bullet Size"));
+        commonUpgrades.add(new Upgrade(new ImageIcon("src/knockback.png"), 0.5, WINDOW_WIDTH / 4.0, WINDOW_HEIGHT / 4.0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, "Knockback:\n+2 Knockback"));
         rareUpgrades.add(new Upgrade(new ImageIcon("src/firerate.png"), 0.5, WINDOW_WIDTH / 4.0, WINDOW_HEIGHT / 4.0, 0, 0, 0, -0.0000015, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, "Firerate:\n-15% Reload"));
         rareUpgrades.add(new Upgrade(new ImageIcon("src/damage.png"), 0.5, WINDOW_WIDTH / 4.0, WINDOW_HEIGHT / 4.0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.0000015, 0, 0, 0, 0, 0, "Damage:\n+15% Damage"));
         rareUpgrades.add(new Upgrade(new ImageIcon("src/splinter.png"), 0.5, WINDOW_WIDTH / 4.0, WINDOW_HEIGHT / 4.0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, "Splinter:\n+1 Splinter"));
-        epicUpgrades.add(new Upgrade(new ImageIcon("src/spray.png"), 0.5, WINDOW_WIDTH / 4.0, WINDOW_HEIGHT / 4.0, 0, 0, 0, -0.000003, Math.PI / 8, 0, 0, -0.000001, 0, 0, 0, 0, 0, 0, 0, "Spray:\n-30% Reload\n-10% Bullet Size\n+" + (double) (int) (Math.PI * 25) / 100 + " Spread"));
+        epicUpgrades.add(new Upgrade(new ImageIcon("src/spray.png"), 0.5, WINDOW_WIDTH / 4.0, WINDOW_HEIGHT / 4.0, 0, 0, 0, -0.000003, Math.PI / 8, 0, 0, -0.000001, 0, 0, 0, 0, 0, 0, 0, "Spray:\n-30% Reload\n-10% Bullet Size\n+" + (double) (int) (Math.PI * 2 / 25) / 100 + " Spread"));
         epicUpgrades.add(new Upgrade(new ImageIcon("src/bounce.png"), 0.5, WINDOW_WIDTH / 4.0, WINDOW_HEIGHT / 4.0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, "Bounce:\n+1 Bounce"));
         epicUpgrades.add(new Upgrade(new ImageIcon("src/penetration.png"), 0.5, WINDOW_WIDTH / 4.0, WINDOW_HEIGHT / 4.0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -0.000003, 0, 0, 0, 1, 0, "Penetration:\n+1 Penetration\n-30% Damage"));
         legendaryUpgrades.add(new Upgrade(new ImageIcon("src/ricochet.png"), 0.5, WINDOW_WIDTH / 4.0, WINDOW_HEIGHT / 4.0, 0, 0, 0, +0.000002, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, "Ricochet:\n+1 Ricochet\n+20% Reload"));
-        legendaryUpgrades.add(new Upgrade(new ImageIcon("src/doubletap.png"), 0.5, WINDOW_WIDTH / 4.0, WINDOW_HEIGHT / 4.0, 0, 0, 0, +0.0000015, Math.PI / 12, 0, 1, -0.000002, 0, -0.000001, 0, 0, 0, 0, 0, "Double Tap:\n+1 Projectile\n+15% Reload\n+" + (double) (int) (Math.PI * 25 / 3) / 100 + " Spread\n-20% Bullet Size\n-10% Damage"));
+        legendaryUpgrades.add(new Upgrade(new ImageIcon("src/doubletap.png"), 0.5, WINDOW_WIDTH / 4.0, WINDOW_HEIGHT / 4.0, 0, 0, 0, +0.0000015, Math.PI / 12, 0, 1, -0.000002, 0, -0.000001, 0, 0, 0, 0, 0, "Double Tap:\n+1 Projectile\n+15% Reload\n+" + (double) (int) (Math.PI * 3 / 25) / 100 + " Spread\n-20% Bullet Size\n-10% Damage"));
         legendaryUpgrades.add(new Upgrade(new ImageIcon("src/mastery.png"), 0.5, WINDOW_WIDTH / 4.0, WINDOW_HEIGHT / 4.0, 0, +0.0000007, +0.0000007, -0.0000007, 0, +0.0000007, 0, +0.0000007, +0.0000007, +0.0000007, 0, 0, 0, 0, 0, "Mastery:\n+7% Max Health\n-7% Reload\n+7% Speed\n+7% Bullet Size\n+7% Bullet Speed\n+7% Damage"));
         add(resetButton);
         resetButton.addActionListener(this);
@@ -227,13 +227,13 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
             g.setColor(new Color(100, 100, 100, 200));
             g.fillRect((int) u.getX() - u.getWidth() / 2 - BORDER_SIZE / 2, (int) u.getY() - u.getHeight() / 2 - BORDER_SIZE / 2, u.getWidth() + BORDER_SIZE, WINDOW_HEIGHT);
             g.setColor(new Color(255, 255, 255, 200));
-            g.setFont(new Font("Arial", Font.BOLD, WINDOW_HEIGHT / 32));
+            g.setFont(new Font("Arial", Font.BOLD, WINDOW_HEIGHT / 40));
             fm = g.getFontMetrics();
             for (int i = 0; i < u.getDesc().split("\n").length; i++) {
                 if (i == 0) {
-                    g.drawString(u.getDesc().split("\n")[i], (int) u.getX() - fm.stringWidth(u.getDesc().split("\n")[i]) / 2, (int) u.getY() + u.getHeight() / 2 + WINDOW_HEIGHT * (i + 1) / 32);
+                    g.drawString(u.getDesc().split("\n")[i], (int) u.getX() - fm.stringWidth(u.getDesc().split("\n")[i]) / 2, (int) u.getY() + u.getHeight() / 2 + WINDOW_HEIGHT * (i + 1) / 40);
                 } else {
-                    g.drawString(u.getDesc().split("\n")[i], (int) u.getX() - u.getWidth() / 2, (int) u.getY() + u.getHeight() / 2 + WINDOW_HEIGHT * (i + 1) / 32);
+                    g.drawString(u.getDesc().split("\n")[i], (int) u.getX() - u.getWidth() / 2, (int) u.getY() + u.getHeight() / 2 + WINDOW_HEIGHT * (i + 1) / 40);
                 }
             }
         }
@@ -424,10 +424,10 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
             spawnDelays.set(1, 3 * spawnDelay * Math.pow(enemyRandom, -Math.random()));
             double x, y;
             do {
-                x = Math.random() * (WINDOW_WIDTH * 3 / 4.0 - enemyImage2.getWidth() * enemySize) + WINDOW_WIDTH / 8.0 - enemyImage2.getWidth() * enemySize / 4.0;
-                y = Math.random() * (WINDOW_HEIGHT * 7 / 8.0 - enemyImage2.getHeight() * enemySize) + WINDOW_HEIGHT / 16.0 - enemyImage2.getHeight() * enemySize / 4.0;
+                x = Math.random() * (WINDOW_WIDTH * 3 / 4.0 - enemyImage2.getWidth() * enemySize / 3) + WINDOW_WIDTH / 8.0 - enemyImage2.getWidth() * enemySize / 12.0;
+                y = Math.random() * (WINDOW_HEIGHT * 7 / 8.0 - enemyImage2.getHeight() * enemySize / 3) + WINDOW_HEIGHT / 16.0 - enemyImage2.getHeight() * enemySize / 12.0;
             } while (player.getDistance(x + enemyImage2.getWidth() / 2.0, y + enemyImage2.getHeight() / 2.0) < 300);
-            sIndicators.add(new Indicator(enemyImage2, enemySize * 2, x, y, 0, 30, 0.1, 5, 0));
+            sIndicators.add(new Indicator(enemyImage2, enemySize * 2 / 3, x, y, 0, 30, 0.1, 5, 0));
         }
     }
 
@@ -460,7 +460,7 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
                     }
                     e.setHealth(e.getHealth() - b.getDamage());
                     if (e.getHealth() <= 0) {
-                        gIndicators.add(new Indicator(e.getImage(), enemySize, e.getX(), e.getY(), e.getAngle(), 30, 1, 0, 2));
+                        gIndicators.add(new Indicator(e.getImage(), e.getSize(), e.getX(), e.getY(), e.getAngle(), 30, 1, 0, 2));
                         gIndicators.getLast().hitFlash();
                         xp += e.getXp();
                         score += e.getXp();
@@ -552,7 +552,7 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
             if (e.getRect().intersects(player.getRect())) {
                 player.hitFlash();
                 player.setHealth(player.getHealth() - e.getDamage());
-                gIndicators.add(new Indicator(e.getImage(), enemySize, e.getX(), e.getY(), e.getAngle(), 30, 1, 0, 2));
+                gIndicators.add(new Indicator(e.getImage(), e.getSize(), e.getX(), e.getY(), e.getAngle(), 30, 1, 0, 2));
                 gIndicators.getLast().hitFlash();
                 i.remove();
             }
@@ -566,7 +566,11 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
         while (it.hasNext()) {
             Indicator i = it.next();
             if (i.shrink()) {
-                enemies.add(new Enemy(i.getImage(), enemySize * (Math.random() * enemyRandom / 10 + 1), i.getOx() + i.getoWidth() / 4.0, i.getOy() + i.getoHeight() / 4.0, 1, enemySpeed * (Math.random() * enemyRandom / 10 + 1), enemyHealth * (Math.random() * enemyRandom / 10 + 1), enemyDamage * (Math.random() * enemyRandom / 10 + 1), null, 0, 0, 0, 0, 0, 0));
+                if (i.getImage() == enemyImage1) {
+                    enemies.add(new Enemy(i.getImage(), i.getSize() / 2 * (Math.random() * enemyRandom / 10 + 1), i.getOx() + i.getoWidth() / 4.0, i.getOy() + i.getoHeight() / 4.0, 1, enemySpeed * (Math.random() * enemyRandom / 10 + 1), enemyHealth * (Math.random() * enemyRandom / 10 + 1), enemyDamage * (Math.random() * enemyRandom / 10 + 1), null, 0, 0, 0, 0, 0, 0));
+                } else if (i.getImage() == enemyImage2) {
+                    enemies.add(new Enemy(i.getImage(), i.getSize() / 2 * (Math.random() * enemyRandom / 10 + 1), i.getOx() + i.getoWidth() / 4.0, i.getOy() + i.getoHeight() / 4.0, 1.2, enemySpeed * 1.5 * (Math.random() * enemyRandom / 10 + 1), enemyHealth * (Math.random() * enemyRandom / 10 + 1), enemyDamage * 1.5 * (Math.random() * enemyRandom / 10 + 1), null, 0, 0, 0, 0, 0, 0));
+                }
                 it.remove();
             }
         }
@@ -582,12 +586,12 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
     }
 
     private void scale() {
-        spawnDelay = baseSpawnDelay * Math.pow(Math.sqrt(score + 1), -0.1);
+        spawnDelay = baseSpawnDelay * Math.pow(score + 10, -0.1);
         enemySize = baseEnemySize + Math.sqrt(score) / 50.0;
-        enemyHealth = baseEnemyHealth * (1 + Math.sqrt(score) / 50.0);
+        enemyHealth = baseEnemyHealth * (1 + Math.sqrt(score) / 30.0);
         enemySpeed = baseEnemySpeed + Math.sqrt(score) / 100.0;
-        enemyDamage = baseEnemyDamage * (1 + Math.sqrt(score) / 50.0);
-        enemyRandom = baseEnemyRandom + Math.sqrt(score) / 100.0;
+        enemyDamage = baseEnemyDamage * (1 + Math.sqrt(score) / 30.0);
+        enemyRandom = baseEnemyRandom + Math.sqrt(score) / 50.0;
     }
 
     private void level() {
@@ -748,7 +752,7 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
         player.setSize(0.5);
         player.setReload(50);
         reload = (int) player.getReload() - 1;
-        spawnDelay = 200;
+        spawnDelay = baseSpawnDelay;
         bounces = 0;
         splinters = 0;
         penetrations = 0;
@@ -807,8 +811,8 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
         } catch (IOException | UnsupportedAudioFileException | LineUnavailableException ex) {
             throw new RuntimeException(ex);
         }
-        spawnEnemy();
         scale();
+        spawnEnemy();
         moveEnemy();
         movePlayer();
         checkAutofire();

@@ -41,6 +41,10 @@ public class Indicator {
         return image;
     }
 
+    public double getSize() {
+        return size;
+    }
+
     public int getsWidth() {
         width = (int) (image.getWidth() * size * alpha);
         return width;
