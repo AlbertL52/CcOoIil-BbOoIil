@@ -1,19 +1,17 @@
 import java.awt.image.BufferedImage;
 
-public class Bullet {
+public class EnemyBullet {
     private BufferedImage image;
     private int width, height;
-    private int bounces, splinters, penetrations, ricochets;
+    private int bounces;
     private double size;
     private double x, y;
     private double xCenter, yCenter;
     private double angle;
     private double speed, xSpeed, ySpeed;
     private double damage;
-    private double knockback;
-    private boolean hit;
 
-    public Bullet(BufferedImage image, double x, double y, double size, double speed, double angle, double damage, double knockback, int bounces, int splinters, int penetrations, int ricochets) {
+    public EnemyBullet(BufferedImage image, double x, double y, double size, double speed, double angle, double damage, int bounces) {
         this.image = image;
         this.size = size;
         this.width = (int) (image.getWidth() * size);
@@ -27,12 +25,7 @@ public class Bullet {
         xSpeed = speed * Math.cos(angle);
         ySpeed = speed * Math.sin(angle);
         this.damage = damage;
-        this.knockback = knockback;
         this.bounces = bounces;
-        this.splinters = splinters;
-        this.penetrations = penetrations;
-        this.ricochets = ricochets;
-        hit = false;
     }
 
     public BufferedImage getImage() {
@@ -89,28 +82,8 @@ public class Bullet {
         return damage;
     }
 
-    public double getKnockback() {
-        return knockback;
-    }
-
     public int getBounces() {
         return bounces;
-    }
-
-    public int getSplinters() {
-        return splinters;
-    }
-
-    public int getPenetrations() {
-        return penetrations;
-    }
-
-    public int getRicochets() {
-        return ricochets;
-    }
-
-    public boolean hit() {
-        return hit;
     }
 
     public void setImage(BufferedImage image) {
@@ -165,27 +138,7 @@ public class Bullet {
         this.damage = damage;
     }
 
-    public void setKnockback(double knockback) {
-        this.knockback = knockback;
-    }
-
     public void setBounces(int bounces) {
         this.bounces = bounces;
-    }
-
-    public void setSplinters(int splinters) {
-        this.splinters = splinters;
-    }
-
-    public void setPenetrations(int penetrations) {
-        this.penetrations = penetrations;
-    }
-
-    public void setRicochets(int ricochets) {
-        this.ricochets = ricochets;
-    }
-
-    public void setHit(boolean hit) {
-        this.hit = hit;
     }
 }

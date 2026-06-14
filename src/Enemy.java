@@ -1,13 +1,12 @@
-import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.io.IOException;
 
 public class Enemy {
 
     private BufferedImage image, bulletImage;
     private int width, height;
     private int flashTime, maxFlash;
+    private int count, counter;
     private double size;
     private double x, y;
     private double xp;
@@ -16,20 +15,23 @@ public class Enemy {
     private double speed;
     private double health;
     private double damage;
-    private double kX, kY;
-    private int projectiles, bounces;
+    private double kX, kY, kbd;
+    private int reloadTime, projectiles, bounces;
     private double reload, spread, bulletSize, bulletSpeed;
+    private boolean circle, one, two, three;
     private Rectangle rect;
 
-    public Enemy(BufferedImage image, double size, double x, double y, double xp, double speed, double health, double damage, BufferedImage bulletImage, int projectiles, int bounces, double reload, double spread, double bulletSize, double bulletSpeed) throws IOException {
+    public Enemy(BufferedImage image, boolean circle, double size, double x, double y, double angle, double xp, double speed, double health, double damage, double kbd, BufferedImage bulletImage, int projectiles, int bounces, double reload, double spread, double bulletSize, double bulletSpeed, int count) {
         this.image = image;
         this.xp = xp;
         this.size = size;
         this.x = x;
         this.y = y;
+        this.angle = angle;
         this.speed = speed;
         this.health = health;
         this.damage = damage;
+        this.kbd = kbd;
         this.bulletImage = bulletImage;
         this.projectiles = projectiles;
         this.bounces = bounces;
@@ -37,15 +39,21 @@ public class Enemy {
         this.spread = spread;
         this.bulletSize = bulletSize;
         this.bulletSpeed = bulletSpeed;
+        this.count = count;
+        this.circle = circle;
         width = (int) (image.getWidth() * size);
         height = (int) (image.getHeight() * size);
+        counter = 0;
         xCenter = x + ((double) width / 2);
         yCenter = y + ((double) height / 2);
         flashTime = 0;
         maxFlash = 8;
+        reloadTime = 0;
         kX = 0;
         kY = 0;
-        angle = 0;
+        one = false;
+        two = false;
+        three = false;
         rect = new Rectangle((int) x, (int) y, width, height);
     }
 
@@ -71,6 +79,14 @@ public class Enemy {
 
     public int getHeight() {
         return height;
+    }
+
+    public int getCount() {
+        return count;
+    }
+
+    public int getCounter() {
+        return counter;
     }
 
     public double getXp() {
@@ -115,6 +131,10 @@ public class Enemy {
         return bulletImage;
     }
 
+    public int getReloadTime() {
+        return reloadTime;
+    }
+
     public int getProjectiles() {
         return projectiles;
     }
@@ -148,6 +168,22 @@ public class Enemy {
         return rect;
     }
 
+    public boolean isCircle() {
+        return circle;
+    }
+
+    public boolean isOne() {
+        return one;
+    }
+
+    public boolean isTwo() {
+        return two;
+    }
+
+    public boolean isThree() {
+        return three;
+    }
+
     public void setImage(BufferedImage image) {
         this.image = image;
     }
@@ -170,6 +206,14 @@ public class Enemy {
 
     public void setHeight(int height) {
         this.height = height;
+    }
+
+    public void setCount(int count) {
+        this.count = count;
+    }
+
+    public void setCounter(int counter) {
+        this.counter = counter;
     }
 
     public void setXp(int xp) {
@@ -200,12 +244,28 @@ public class Enemy {
         this.damage = damage;
     }
 
+    public void setReloadTime(int reloadTime) {
+        this.reloadTime = reloadTime;
+    }
+
     public void setReload(double reload) {
         this.reload = reload;
     }
 
     public void setSpread(double spread) {
         this.spread = spread;
+    }
+
+    public void setOne(boolean one) {
+        this.one = one;
+    }
+
+    public void setTwo(boolean two) {
+        this.two = two;
+    }
+
+    public void setThree(boolean three) {
+        this.three = three;
     }
 
     public void hitFlash() {
@@ -227,9 +287,9 @@ public class Enemy {
         kY += y;
     }
 
-    public void dampenKnockback(double d) {
-        kX *= d;
-        kY *= d;
+    public void dampenKnockback() {
+        kX *= kbd;
+        kY *= kbd;
         if (kX < 0.1 && kX > -0.1) {
             kX = 0;
         }

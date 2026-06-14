@@ -110,6 +110,10 @@ public class Indicator {
         return alpha;
     }
 
+    public double getDistance(double x, double y) {
+        return Math.sqrt(Math.pow(updatexCenter() - x, 2) + Math.pow(updateyCenter() - y, 2));
+    }
+
     public void setImage(BufferedImage image) {
         this.image = image;
     }
