@@ -16,6 +16,7 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
     private static final double DIAGONAL = 1 / Math.sqrt(2);
     private final BufferedImage playerImage = ImageIO.read(new File("src/Player1.png")), playerImage2 = ImageIO.read(new File("src/Player2.png")), playerImage3 = ImageIO.read(new File("src/Player3.png")), playerImage4 = ImageIO.read(new File("src/Player4.png"));
     private final BufferedImage bulletImage = ImageIO.read(new File("src/Bullet.png"));
+    private final BufferedImage explosionImage = ImageIO.read(new File("src/Explosion.png"));
     private final BufferedImage enemyImage1 = ImageIO.read(new File("src/Enemy1.png"));
     private final BufferedImage enemyImage2 = ImageIO.read(new File("src/Enemy2.png"));
     private final BufferedImage enemyImage3 = ImageIO.read(new File("src/Enemy3.png"));
@@ -35,13 +36,14 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
     private final RescaleOp whiteFlashOp = new RescaleOp(new float[]{0f, 0f, 0f, 1f}, new float[]{255f, 255f, 255f, 0f}, null);
     private final JButton resetButton = new JButton("Reset");
     private final boolean[] PRESSED_KEYS = new boolean[1024];
-    private final Player player = new Player(playerImage, 0.5, (int) (WINDOW_WIDTH / 2.0 - playerImage.getWidth() / 4.0 + 20), (int) (WINDOW_HEIGHT / 2.0 - playerImage.getHeight() / 4.0), 3, 1000, 100, 0, 1);
+    private final Player player = new Player(playerImage, 0.5, (int) (WINDOW_WIDTH / 2.0 - playerImage.getWidth() / 4.0 + 20), (int) (WINDOW_HEIGHT / 2.0 - playerImage.getHeight() / 4.0), 3, 100, 1, 100, 0, 1);
     private double xp = 0, score = 0;
     private int xpReq = 5;
+    private double regeneration = (int) player.getRegeneration() - 1;
     private int reload = (int) player.getReload() - 1;
     private ArrayList<Double> spawnTimes = new ArrayList<>(), spawnDelays = new ArrayList<>();
-    private int bounces = 0, splinters = 0, penetrations = 0, ricochets = 0;
-    private double bulletSize = player.getSize() * 1.25, bulletSpeed = 4, damage = 40, knockback = 2;
+    private double bounces = 0, splinters = 0, penetrations = 0, ricochets = 0, warps = 0;
+    private double bulletSize = player.getSize() * 1.25, bulletSpeed = 4, damage = 40, knockback = 2, explosionSize = 0;
     private double baseSpawnDelay = 450, baseEnemySize = 1, baseEnemySpeed = 1, baseEnemyHealth = 60, baseEnemyDamage = 10, baseEnemyRandom = 1;
     private double spawnDelay, enemySize, enemySpeed, enemyHealth, enemyDamage, enemyRandom;
     private double angleToMouse;
@@ -56,18 +58,39 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
             count.add(0);
             counts.add(0);
         }
-        commonUpgrades.add(new Upgrade(new ImageIcon("src/velocity.png"), 0.5, WINDOW_WIDTH / 4.0, WINDOW_HEIGHT / 4.0, 0, 0, 0, 0, 0, 0, 0, 0, 0.000002, 0.0000005, 0, 0, 0, 0, 0, "Velocity:\n+20% Bullet Speed\n+5% Damage"));
-        commonUpgrades.add(new Upgrade(new ImageIcon("src/biggerbullets.png"), 0.5, WINDOW_WIDTH / 4.0, WINDOW_HEIGHT / 4.0, 0, 0, 0, 0, 0, 0, 0, 0.0000030, 0, 0, 0, 0, 0, 0, 0, "Bigger Bullets:\n+30% Bullet Size"));
-        commonUpgrades.add(new Upgrade(new ImageIcon("src/knockback.png"), 0.5, WINDOW_WIDTH / 4.0, WINDOW_HEIGHT / 4.0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, "Knockback:\n+2 Knockback"));
-        rareUpgrades.add(new Upgrade(new ImageIcon("src/firerate.png"), 0.5, WINDOW_WIDTH / 4.0, WINDOW_HEIGHT / 4.0, 0, 0, 0, -0.0000015, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, "Firerate:\n-15% Reload"));
-        rareUpgrades.add(new Upgrade(new ImageIcon("src/damage.png"), 0.5, WINDOW_WIDTH / 4.0, WINDOW_HEIGHT / 4.0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.0000015, 0, 0, 0, 0, 0, "Damage:\n+15% Damage"));
-        rareUpgrades.add(new Upgrade(new ImageIcon("src/splinter.png"), 0.5, WINDOW_WIDTH / 4.0, WINDOW_HEIGHT / 4.0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, "Splinter:\n+1 Splinter"));
-        epicUpgrades.add(new Upgrade(new ImageIcon("src/spray.png"), 0.5, WINDOW_WIDTH / 4.0, WINDOW_HEIGHT / 4.0, 0, 0, 0, -0.0000025, Math.PI / 8, 0, 0, -0.000001, 0, 0, 0, 0, 0, 0, 0, "Spray:\n-25% Reload\n-10% Bullet Size\n+" + (double) (int) (Math.PI * 2 / 25) / 100 + " Spread"));
-        epicUpgrades.add(new Upgrade(new ImageIcon("src/bounce.png"), 0.5, WINDOW_WIDTH / 4.0, WINDOW_HEIGHT / 4.0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, "Bounce:\n+1 Bounce"));
-        epicUpgrades.add(new Upgrade(new ImageIcon("src/penetration.png"), 0.5, WINDOW_WIDTH / 4.0, WINDOW_HEIGHT / 4.0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -0.000003, 0, 0, 0, 1, 0, "Penetration:\n+1 Penetration\n-30% Damage"));
-        legendaryUpgrades.add(new Upgrade(new ImageIcon("src/ricochet.png"), 0.5, WINDOW_WIDTH / 4.0, WINDOW_HEIGHT / 4.0, 0, 0, 0, +0.000002, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, "Ricochet:\n+1 Ricochet\n+20% Reload"));
-        legendaryUpgrades.add(new Upgrade(new ImageIcon("src/doubletap.png"), 0.5, WINDOW_WIDTH / 4.0, WINDOW_HEIGHT / 4.0, 0, 0, 0, +0.0000015, Math.PI / 12, 0, 1, -0.000002, 0, -0.000001, 0, 0, 0, 0, 0, "Double Tap:\n+1 Projectile\n+15% Reload\n+" + (double) (int) (Math.PI * 3 / 25) / 100 + " Spread\n-20% Bullet Size\n-10% Damage"));
-        legendaryUpgrades.add(new Upgrade(new ImageIcon("src/mastery.png"), 0.5, WINDOW_WIDTH / 4.0, WINDOW_HEIGHT / 4.0, 0, +0.0000007, +0.0000007, -0.0000007, 0, +0.0000007, 0, +0.0000007, +0.0000007, +0.0000007, 0, 0, 0, 0, 0, "Mastery:\n+7% Max Health\n-7% Reload\n+7% Speed\n+7% Bullet Size\n+7% Bullet Speed\n+7% Damage"));
+        commonUpgrades.add(new Upgrade(new ImageIcon("src/velocity.png"), 0.5, WINDOW_WIDTH / 4.0, WINDOW_HEIGHT / 4.0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.000002, 0.0000005, 0, 0, 0, 0, 0, 0, 0, "Velocity:\n+20% Bullet Speed\n+5% Damage"));
+        commonUpgrades.add(new Upgrade(new ImageIcon("src/biggerbullets.png"), 0.5, WINDOW_WIDTH / 4.0, WINDOW_HEIGHT / 4.0, 0, 0, 0, 0, 0, 0, 0, 0, 0.000003, 0, 0, 0, 0, 0, 0, 0, 0, 0, "Bigger Bullets:\n+30% Bullet Size"));
+        commonUpgrades.add(new Upgrade(new ImageIcon("src/knockback.png"), 0.5, WINDOW_WIDTH / 4.0, WINDOW_HEIGHT / 4.0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, "Knockback:\n+2 Knockback"));
+        commonUpgrades.add(new Upgrade(new ImageIcon("src/health.png"), 0.5, WINDOW_WIDTH / 4.0, WINDOW_HEIGHT / 4.0, 0, 30, 30, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, "Health:\n+30 Max Health"));
+        commonUpgrades.add(new Upgrade(new ImageIcon("src/heavybullets.png"), 0.5, WINDOW_WIDTH / 4.0, WINDOW_HEIGHT / 4.0, 0, 0, 0, 0, 0, 0, -0.000001, 0, 0, 0, 0.000001, 0.000001, 0, 0, 0, 0, 0, 0, "Heavy Bullets:\n+10% Damage\n+10% Knockback\n-10% Speed"));
+        commonUpgrades.add(new Upgrade(new ImageIcon("src/lightbullets.png"), 0.5, WINDOW_WIDTH / 4.0, WINDOW_HEIGHT / 4.0, 0, 0, 0, 0, -0.00000075, 0.00000075, 0, 0, 0, 0.00000075, 0, 0, 0, 0, 0, 0, 0, 0, "Light Bullets:\n+7.5% Speed\n-7.5% Reload\n+7.5% Bullet Speed"));
+        commonUpgrades.add(new Upgrade(new ImageIcon("src/sharpen.png"), 0.5, WINDOW_WIDTH / 4.0, WINDOW_HEIGHT / 4.0, 0, 0, 0, 0, 0, 0, 0.000003, 0, 0, 0, 7, 0, 0, 0, 0, 0, 0, 0, "Sharpen:\n+7 Damage"));
+        commonUpgrades.add(new Upgrade(new ImageIcon("src/speed.png"), 0.5, WINDOW_WIDTH / 4.0, WINDOW_HEIGHT / 4.0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, "Speed:\n+30% Speed"));
+        rareUpgrades.add(new Upgrade(new ImageIcon("src/firerate.png"), 0.5, WINDOW_WIDTH / 4.0, WINDOW_HEIGHT / 4.0, 0, 0, 0, 0, -0.0000015, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, "Firerate:\n-15% Reload"));
+        rareUpgrades.add(new Upgrade(new ImageIcon("src/damage.png"), 0.5, WINDOW_WIDTH / 4.0, WINDOW_HEIGHT / 4.0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.0000015, 0, 0, 0, 0, 0, 0, 0, "Damage:\n+15% Damage"));
+        rareUpgrades.add(new Upgrade(new ImageIcon("src/amplify.png"), 0.5, WINDOW_WIDTH / 4.0, WINDOW_HEIGHT / 4.0, 0, 0, 0, 0, 0, 0, 0.2, 0, 0.2, 0.5, 3, 1, 0, 0, 0, 0, 0, 0, "Amplify:\n+0.2 Speed\n+0.2 Bullet Size\n+0.5 Bullet Speed\n+3 Damage\n+1 Knockback"));
+        rareUpgrades.add(new Upgrade(new ImageIcon("src/grapple.png"), 0.5, WINDOW_WIDTH / 4.0, WINDOW_HEIGHT / 4.0, 0, 0, 0, 0, -0.000001, 0, 0, 0, 0, 0, 0.000001, -1, 0, 0, 0, 0, 0, 0, "Grapple:\n-10% Reload\n+10% Damage\n-1 Knockback"));
+        rareUpgrades.add(new Upgrade(new ImageIcon("src/magnitude.png"), 0.5, WINDOW_WIDTH / 4.0, WINDOW_HEIGHT / 4.0, 0, 0, 0, 0, 0, 0, 0, 0, 0.0000015, 0, 0.00000075, 0, 0, 0, 0, 0, 0.00000075, 0, "Magnitude:\n+15% Bullet Size\n+7.5% Damage\n+7.5% Explosion Size"));
+        rareUpgrades.add(new Upgrade(new ImageIcon("src/precision.png"), 0.5, WINDOW_WIDTH / 4.0, WINDOW_HEIGHT / 4.0, 0, 0, 0, 0, 0, 0, 0, 0, -0.000001, 0.0000015, 0.00000125, 0, 0, 0, 0, 0, 0, 0, "Precision:\n+15% Bullet Speed\n+12.5% Damage\n-10% Bullet Size"));
+        rareUpgrades.add(new Upgrade(new ImageIcon("src/regeneration.png"), 0.5, WINDOW_WIDTH / 4.0, WINDOW_HEIGHT / 4.0, 0, 0, player.getMaxHealth() / 4, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, "Regeneration:\n+25% Health\n+1 Regeneration"));
+        rareUpgrades.add(new Upgrade(new ImageIcon("src/reroll.png"), 0.5, WINDOW_WIDTH / 4.0, WINDOW_HEIGHT / 4.0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, "Reroll:\nReroll current\nupgrade selection"));
+        rareUpgrades.add(new Upgrade(new ImageIcon("src/sluggishbullets.png"), 0.5, WINDOW_WIDTH / 4.0, WINDOW_HEIGHT / 4.0, 0, 0, 0, 0, 0, 0, 0, 0, 0.000004, -0.000002, 0, 0, 0, 0, 0, 0, 0, 0, "Sluggish Bullets:\n+40% Bullet Size\n-20% Bullet Speed"));
+        epicUpgrades.add(new Upgrade(new ImageIcon("src/splinter.png"), 0.5, WINDOW_WIDTH / 4.0, WINDOW_HEIGHT / 4.0, 0, 0, 0, 0, 0.000001, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, "Splinter:\n+1 Splinter\n+10% Reload"));
+        epicUpgrades.add(new Upgrade(new ImageIcon("src/spray.png"), 0.5, WINDOW_WIDTH / 4.0, WINDOW_HEIGHT / 4.0, 0, 0, 0, 0, -0.0000025, Math.PI / 8, 0, 0, -0.000001, 0, 0, 0, 0, 0, 0, 0, 0, 0, "Spray:\n-25% Reload\n-10% Bullet Size\n+" + (double) (int) (Math.PI * 25 / 2) / 100 + " Spread"));
+        epicUpgrades.add(new Upgrade(new ImageIcon("src/bounce.png"), 0.5, WINDOW_WIDTH / 4.0, WINDOW_HEIGHT / 4.0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, "Bounce:\n+1 Bounce"));
+        epicUpgrades.add(new Upgrade(new ImageIcon("src/penetration.png"), 0.5, WINDOW_WIDTH / 4.0, WINDOW_HEIGHT / 4.0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -0.000003, 0, 0, 0, 1, 0, 0, 0, "Penetration:\n+1 Penetration\n-30% Damage"));
+        epicUpgrades.add(new Upgrade(new ImageIcon("src/bloodbullets.png"), 0.5, WINDOW_WIDTH / 4.0, WINDOW_HEIGHT / 4.0, 0, -0.000003, -0.000003, 0, 0, 0, 0, 0, 0, 0, 0.0000025, 0, 0, 0, 0, 0, 0, 0, "Blood Bullets:\n+25% Damage\n-30% Max Health"));
+        epicUpgrades.add(new Upgrade(new ImageIcon("src/charge.png"), 0.5, WINDOW_WIDTH / 4.0, WINDOW_HEIGHT / 4.0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, player.getReload() * 0.0000001 / 4, 0, 0, 0, 0, 0, 0, 0, "Charge:\nGain 1% Damage for\nevery 4 Reload\n(+" + (double) (int) (player.getReload() * 25) / 100 + "% Damage)"));
+        epicUpgrades.add(new Upgrade(new ImageIcon("src/force.png"), 0.5, WINDOW_WIDTH / 4.0, WINDOW_HEIGHT / 4.0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, knockback * 0.0000006, 0, 0, 0, 0, 0, 0, "Force:\nGain 6% Damage for\nevery 1 Knockback\n(+" + (double) (int) (knockback * 100) / 100 + "% Damage)"));
+        epicUpgrades.add(new Upgrade(new ImageIcon("src/gamble.png"), 0.5, WINDOW_WIDTH / 4.0, WINDOW_HEIGHT / 4.0, (Math.random() * 20 - 5) * 0.0000001, (Math.random() * 20 - 5) * 0.0000001, (Math.random() * 20 - 5) * 0.0000001, (Math.random() * 20 - 5) * 0.0000001, (Math.random() * 20 - 5) * 0.0000001, (Math.random() * 20 - 5) * 0.0000001, (Math.random() * 20 - 5) * 0.0000001, (Math.random() * 20 - 5) * 0.0000001, (Math.random() * 20 - 5) * 0.0000001, (Math.random() * 20 - 5) * 0.0000001, (Math.random() * 20 - 5) * 0.0000001, (Math.random() * 20 - 5) * 0.0000001, (Math.random() * 20 - 5) * 0.0000001, (Math.random() * 20 - 5) * 0.0000001, (Math.random() * 20 - 5) * 0.0000001, (Math.random() * 20 - 5) * 0.0000001, (Math.random() * 20 - 5) * 0.0000001, (Math.random() * 20 - 5) * 0.0000001, "Gamble:\n-5% to +15%\non every stat"));
+        epicUpgrades.add(new Upgrade(new ImageIcon("src/inertia.png"), 0.5, WINDOW_WIDTH / 4.0, WINDOW_HEIGHT / 4.0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, "Inertia:\n+1 Knockback for\nevery 0.3 Bullet Size\n(+" + (double) (int) (bulletSize / 0.3 * 100) / 100 + " Knockback)"));
+        epicUpgrades.add(new Upgrade(new ImageIcon("src/reuse.png"), 0.5, WINDOW_WIDTH / 4.0, WINDOW_HEIGHT / 4.0, 0, 0.000005, 0.000005, 0, 0, 0, 0.000003, 0, 0, 0, 0, 0, -0.0000001, -0.0000001, 0, 0, 0, 0, "Reuse:\n+50% Max Health\n+30% Speed\n-10% Splinters\n-10% Bounces"));
+        legendaryUpgrades.add(new Upgrade(new ImageIcon("src/ricochet.png"), 0.5, WINDOW_WIDTH / 4.0, WINDOW_HEIGHT / 4.0, 0, 0, 0, 0, 0.000002, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, "Ricochet:\n+1 Ricochet\n+20% Reload"));
+        legendaryUpgrades.add(new Upgrade(new ImageIcon("src/doubletap.png"), 0.5, WINDOW_WIDTH / 4.0, WINDOW_HEIGHT / 4.0, 0, 0, 0, 0, 0.0000015, Math.PI / 12, 0, 1, -0.000002, 0, -0.000001, 0, 0, 0, 0, 0, 0, 0, "Double Tap:\n+1 Projectile\n+15% Reload\n+" + (double) (int) (Math.PI * 25 / 3) / 100 + " Spread\n-20% Bullet Size\n-10% Damage"));
+        legendaryUpgrades.add(new Upgrade(new ImageIcon("src/mastery.png"), 0.5, WINDOW_WIDTH / 4.0, WINDOW_HEIGHT / 4.0, 0, 0.0000007, 0.0000007, 0, -0.0000007, 0, 0.0000007, 0, 0.0000007, 0.0000007, 0.0000007, 0, 0, 0, 0, 0, 0, 0, "Mastery:\n+7% Max Health\n-7% Reload\n+7% Speed\n+7% Bullet Size\n+7% Bullet Speed\n+7% Damage"));
+        legendaryUpgrades.add(new Upgrade(new ImageIcon("src/explosionu.png"), 0.5, WINDOW_WIDTH / 4.0, WINDOW_HEIGHT / 4.0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, "Explosion:\n+1 Explosion Size"));
+        legendaryUpgrades.add(new Upgrade(new ImageIcon("src/processor.png"), 0.5, WINDOW_WIDTH / 4.0, WINDOW_HEIGHT / 4.0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.0000025, 0, 0, 0.0000025, 0, 0.0000025, 0.0000025, 0, 0, "Processor:\n+25% Bullet Speed\n+25% Bounces\n+25% Penetrations\n+25% Ricochets"));
+        legendaryUpgrades.add(new Upgrade(new ImageIcon("src/warp.png"), 0.5, WINDOW_WIDTH / 4.0, WINDOW_HEIGHT / 4.0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, "Warp:\n+1 Warp"));
         add(resetButton);
         resetButton.addActionListener(this);
         resetButton.setVisible(true);
@@ -111,21 +134,21 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
             while (ei.hasNext()) {
                 Enemy e = ei.next();
                 if (first) {
-                    gIndicators.add(new Indicator(e.getImage(), enemySize, e.getX(), e.getY(), e.getAngle(), 30, 1, 0, 2));
+                    gIndicators.add(new Indicator(e.getImage(), enemySize, e.getX(), e.getY(), e.getAngle(), 1, 30, 1, 0, 2));
                 }
                 ei.remove();
             }
             while (bi.hasNext()) {
                 Bullet b = bi.next();
                 if (first) {
-                    gIndicators.add(new Indicator(b.getImage(), b.getSize(), b.getX(), b.getY(), 0, 30, 1, 0, 2));
+                    gIndicators.add(new Indicator(b.getImage(), b.getSize(), b.getX(), b.getY(), 0, 1, 30, 1, 0, 2));
                 }
                 bi.remove();
             }
             while (ebi.hasNext()) {
                 EnemyBullet eb = ebi.next();
                 if (first) {
-                    gIndicators.add(new Indicator(eb.getImage(), eb.getSize(), eb.getX(), eb.getY(), 0, 30, 1, 0, 2));
+                    gIndicators.add(new Indicator(eb.getImage(), eb.getSize(), eb.getX(), eb.getY(), 0, 1, 30, 1, 0, 2));
                 }
                 ebi.remove();
             }
@@ -221,22 +244,25 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
         g.setColor(new Color(255, 255, 255, 200));
         g.fillRect(WINDOW_WIDTH * 17 / 128, WINDOW_HEIGHT * 57 / 64, (int) ((WINDOW_WIDTH * 7 / 64.0 - BORDER_SIZE) * xp / xpReq), WINDOW_HEIGHT / 32);
         //draw stats
-        g.setFont(new Font("Arial", Font.PLAIN, WINDOW_HEIGHT / 48));
+        g.setFont(new Font("Arial", Font.PLAIN, WINDOW_HEIGHT / 50));
         g.drawString("score: " + (double) (int) (score * 100) / 100, WINDOW_WIDTH / 128, WINDOW_HEIGHT * 3 / 40);
         g.drawString("player width: " + player.getWidth(), WINDOW_WIDTH / 128, WINDOW_HEIGHT * 4 / 40);
         g.drawString("player height: " + player.getHeight(), WINDOW_WIDTH / 128, WINDOW_HEIGHT * 5 / 40);
         g.drawString("player speed: " + player.getRoundedSpeed(), WINDOW_WIDTH / 128, WINDOW_HEIGHT * 6 / 40);
-        g.drawString("reload: " + player.getRoundedReload(), WINDOW_WIDTH / 128, WINDOW_HEIGHT * 7 / 40);
-        g.drawString("spread (r): " + player.getRoundedSpread(), WINDOW_WIDTH / 128, WINDOW_HEIGHT * 8 / 40);
-        g.drawString("projectiles: " + player.getProjectiles(), WINDOW_WIDTH / 128, WINDOW_HEIGHT * 9 / 40);
-        g.drawString("bullet size: " + (double) (int) (bulletSize * 100) / 100, WINDOW_WIDTH / 128, WINDOW_HEIGHT * 10 / 40);
-        g.drawString("bullet speed: " + (double) (int) (bulletSpeed * 100) / 100, WINDOW_WIDTH / 128, WINDOW_HEIGHT * 11 / 40);
-        g.drawString("damage: " + (double) (int) (damage * 100) / 100, WINDOW_WIDTH / 128, WINDOW_HEIGHT * 12 / 40);
-        g.drawString("knockback: " + (double) (int) (knockback * 100) / 100, WINDOW_WIDTH / 128, WINDOW_HEIGHT * 13 / 40);
-        g.drawString("bounces: " + bounces, WINDOW_WIDTH / 128, WINDOW_HEIGHT * 14 / 40);
-        g.drawString("splinters: " + splinters, WINDOW_WIDTH / 128, WINDOW_HEIGHT * 15 / 40);
-        g.drawString("penetrations: " + penetrations, WINDOW_WIDTH / 128, WINDOW_HEIGHT * 16 / 40);
-        g.drawString("ricochets: " + ricochets, WINDOW_WIDTH / 128, WINDOW_HEIGHT * 17 / 40);
+        g.drawString("regeneration: " + player.getRoundedRegeneration(), WINDOW_WIDTH / 128, WINDOW_HEIGHT * 7 / 40);
+        g.drawString("reload: " + player.getRoundedReload(), WINDOW_WIDTH / 128, WINDOW_HEIGHT * 8 / 40);
+        g.drawString("spread (r): " + player.getRoundedSpread(), WINDOW_WIDTH / 128, WINDOW_HEIGHT * 9 / 40);
+        g.drawString("projectiles: " + player.getRoundedProjectiles(), WINDOW_WIDTH / 128, WINDOW_HEIGHT * 10 / 40);
+        g.drawString("bullet size: " + (double) (int) (bulletSize * 100) / 100, WINDOW_WIDTH / 128, WINDOW_HEIGHT * 11 / 40);
+        g.drawString("bullet speed: " + (double) (int) (bulletSpeed * 100) / 100, WINDOW_WIDTH / 128, WINDOW_HEIGHT * 12 / 40);
+        g.drawString("damage: " + (double) (int) (damage * 100) / 100, WINDOW_WIDTH / 128, WINDOW_HEIGHT * 13 / 40);
+        g.drawString("knockback: " + (double) (int) (knockback * 100) / 100, WINDOW_WIDTH / 128, WINDOW_HEIGHT * 14 / 40);
+        g.drawString("bounces: " + (double) (int) (bounces * 100) / 100, WINDOW_WIDTH / 128, WINDOW_HEIGHT * 15 / 40);
+        g.drawString("splinters: " + (double) (int) (splinters * 100) / 100, WINDOW_WIDTH / 128, WINDOW_HEIGHT * 16 / 40);
+        g.drawString("penetrations: " + (double) (int) (penetrations * 100) / 100, WINDOW_WIDTH / 128, WINDOW_HEIGHT * 17 / 40);
+        g.drawString("ricochets: " + (double) (int) (ricochets * 100) / 100, WINDOW_WIDTH / 128, WINDOW_HEIGHT * 18 / 40);
+        g.drawString("explosion: " + (double) (int) (explosionSize * 100) / 100, WINDOW_WIDTH / 128, WINDOW_HEIGHT * 19 / 40);
+        g.drawString("warps: " + (double) (int) (warps * 100) / 100, WINDOW_WIDTH / 128, WINDOW_HEIGHT * 20 / 40);
 
         g.drawString("Enemy (Base)", WINDOW_WIDTH * 447 / 500, WINDOW_HEIGHT / 20);
         g.drawString("spawn delay: " + (int) (spawnDelay * Math.pow(enemyRandom, -0.5)), WINDOW_WIDTH * 447 / 500, WINDOW_HEIGHT * 3 / 40);
@@ -251,7 +277,30 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
             g.fillRect((int) u.getX() - u.getWidth() / 2 - BORDER_SIZE, (int) u.getY() - u.getHeight() / 2 - BORDER_SIZE, u.getWidth() + BORDER_SIZE * 2, WINDOW_HEIGHT);
             g.setColor(new Color(100, 100, 100, 200));
             g.fillRect((int) u.getX() - u.getWidth() / 2 - BORDER_SIZE / 2, (int) u.getY() - u.getHeight() / 2 - BORDER_SIZE / 2, u.getWidth() + BORDER_SIZE, WINDOW_HEIGHT);
-            g.setColor(new Color(255, 255, 255, 200));
+            for (Upgrade c : commonUpgrades) {
+                if (c.getImage() == u.getImage()) {
+                    g.setColor(new Color(255, 255, 255));
+                    break;
+                }
+            }
+            for (Upgrade r : rareUpgrades) {
+                if (r.getImage() == u.getImage()) {
+                    g.setColor(new Color(0, 160, 255));
+                    break;
+                }
+            }
+            for (Upgrade e : epicUpgrades) {
+                if (e.getImage() == u.getImage()) {
+                    g.setColor(new Color(225, 0, 255));
+                    break;
+                }
+            }
+            for (Upgrade l : legendaryUpgrades) {
+                if (l.getImage() == u.getImage()) {
+                    g.setColor(new Color(255, 255, 0));
+                    break;
+                }
+            }
             g.setFont(new Font("Arial", Font.BOLD, WINDOW_HEIGHT / 40));
             fm = g.getFontMetrics();
             for (int i = 0; i < u.getDesc().split("\n").length; i++) {
@@ -277,7 +326,7 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
                     x = Math.random() * (WINDOW_WIDTH * 3 / 4.0 - enemyImage1.getWidth() * enemySize) + WINDOW_WIDTH / 8.0 - enemyImage1.getWidth() * enemySize / 4.0;
                     y = Math.random() * (WINDOW_HEIGHT * 7 / 8.0 - enemyImage1.getHeight() * enemySize) + WINDOW_HEIGHT / 16.0 - enemyImage1.getHeight() * enemySize / 4.0;
                 } while (player.getDistance(x + enemyImage1.getWidth() / 2.0, y + enemyImage1.getHeight() / 2.0) < 300);
-                sIndicators.add(new Indicator(enemyImage3, enemySize * 2, x, y, 0, 30, 0.1, 5, 0));
+                sIndicators.add(new Indicator(enemyImage3, enemySize * 2, x, y, 0, 1, 30, 0.1, 5, 0));
             }
         }
     }
@@ -335,9 +384,9 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
 
     private boolean bulletEnemyCollision(Bullet b, Enemy e) {
         if (e.isCircle()) {
-            return pointToPointCollision(new Point((int) b.updatexCenter(), (int) b.updateyCenter()), b.getWidth() / 2.5, new Point((int) e.updatexCenter(), (int) e.updateyCenter()), e.getWidth() / 2.5);
+            return pointToPointCollision(new Point((int) b.updatexCenter(), (int) b.updateyCenter()), b.getWidth() / 2.0, new Point((int) e.updatexCenter(), (int) e.updateyCenter()), e.getWidth() / 2.5);
         } else {
-            return pointToRectCollision(new Point((int) b.updatexCenter(), (int) b.updateyCenter()), b.getWidth() / 2.5, e.getRect());
+            return pointToRectCollision(new Point((int) b.updatexCenter(), (int) b.updateyCenter()), b.getWidth() / 2.0, e.getRect());
         }
     }
 
@@ -362,10 +411,18 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
     }
 
     //player
+    private void regenerate() {
+        regeneration++;
+        if (regeneration >= 500 / player.getRegeneration() && player.getHealth() < player.getMaxHealth()) {
+            player.setHealth(player.getHealth() + 1);
+            regeneration = 0;
+        }
+    }
+
     private void movePlayer() {
         player.updateFlash();
         double speed = player.getSpeed();
-        double diagSpeed = speed * DIAGONAL;
+        double diagonalSpeed = speed * DIAGONAL;
 
         boolean up = PRESSED_KEYS[KeyEvent.VK_W];
         boolean down = PRESSED_KEYS[KeyEvent.VK_S];
@@ -373,16 +430,16 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
         boolean right = PRESSED_KEYS[KeyEvent.VK_D];
 
         if (left && player.getX() > WINDOW_WIDTH / 8.0) {
-            player.setX(player.getX() - (up || down ? diagSpeed : speed));
+            player.setX(player.getX() - (up || down ? diagonalSpeed : speed));
         }
         if (right && player.getX() < (WINDOW_WIDTH * 7) / 8.0 - player.getWidth() * 0.75) {
-            player.setX(player.getX() + (up || down ? diagSpeed : speed));
+            player.setX(player.getX() + (up || down ? diagonalSpeed : speed));
         }
         if (up && player.getY() > WINDOW_HEIGHT / 16.0) {
-            player.setY(player.getY() - (left || right ? diagSpeed : speed));
+            player.setY(player.getY() - (left || right ? diagonalSpeed : speed));
         }
         if (down && player.getY() < (WINDOW_HEIGHT * 15) / 16.0 - player.getHeight()) {
-            player.setY(player.getY() + (left || right ? diagSpeed : speed));
+            player.setY(player.getY() + (left || right ? diagonalSpeed : speed));
         }
     }
 
@@ -399,9 +456,9 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
         angleToMouse = Math.atan2(mousePoint.y - pyc, mousePoint.x - pxc);
         reload++;
         if ((PRESSED_KEYS[KeyEvent.VK_SPACE] || autofire) && reload >= (int) player.getReload()) {
-            for (int i = 0; i < player.getProjectiles(); i++) {
+            for (int i = 0; i < (int) player.getProjectiles(); i++) {
                 double random = Math.random() * player.getSpread() - player.getSpread() / 2;
-                bullets.add(new Bullet(bulletImage, ((pxc - bulletImage.getWidth() * bulletSize / 2) + (player.getWidth() / 2.0 + bulletImage.getWidth() / 3.0 * bulletSize) * Math.cos(angleToMouse)), ((pyc - bulletImage.getHeight() * bulletSize / 2) + (player.getWidth() / 2.0 + bulletImage.getWidth() / 3.0 * bulletSize) * Math.sin(angleToMouse)), bulletSize, bulletSpeed, angleToMouse + random, damage, knockback, bounces, splinters, penetrations, ricochets));
+                bullets.add(new Bullet(bulletImage, ((pxc - bulletImage.getWidth() * bulletSize / 2) + (player.getWidth() / 2.0 + bulletImage.getWidth() / 3.0 * bulletSize) * Math.cos(angleToMouse)), ((pyc - bulletImage.getHeight() * bulletSize / 2) + (player.getWidth() / 2.0 + bulletImage.getWidth() / 3.0 * bulletSize) * Math.sin(angleToMouse)), bulletSize, bulletSpeed, angleToMouse + random, damage, knockback, bounces, splinters, penetrations, ricochets, explosionSize, warps));
             }
             player.setImage(playerImage2);
             reload = 0;
@@ -434,8 +491,23 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
             double bxc = b.updatexCenter();
             double byc = b.updateyCenter();
             //update bounces
-            if (b.getBounces() > 0) {
-                if (bxc < WINDOW_WIDTH / 8.0 || bxc > WINDOW_WIDTH * 7 / 8.0) {
+            if ((int) b.getWarps() > 0) {
+                if (bxc <= WINDOW_WIDTH / 8.0) {
+                    b.setX(b.getX() + WINDOW_WIDTH * 3 / 4.0);
+                    b.setWarps(b.getWarps() - 1);
+                } else if (bxc >= WINDOW_WIDTH * 7 / 8.0) {
+                    b.setX(b.getX() - WINDOW_WIDTH * 3 / 4.0);
+                    b.setWarps(b.getWarps() - 1);
+                } else if (byc <= WINDOW_HEIGHT / 16.0) {
+                    b.setY(b.getY() + WINDOW_HEIGHT * 7 / 8.0);
+                    b.setWarps(b.getWarps() - 1);
+                } else if (byc >= WINDOW_HEIGHT * 15 / 16.0) {
+                    b.setY(b.getY() - WINDOW_HEIGHT * 7 / 8.0);
+                    b.setWarps(b.getWarps() - 1);
+                }
+            }
+            if ((int) b.getBounces() > 0 && b.getWarps() == 0) {
+                if (bxc <= WINDOW_WIDTH / 8.0 || bxc >= WINDOW_WIDTH * 7 / 8.0) {
                     b.setxSpeed(-b.getxSpeed());
                     b.setBounces(b.getBounces() - 1);
                 } else if (byc <= WINDOW_HEIGHT / 16.0 || byc >= WINDOW_HEIGHT * 15 / 16.0) {
@@ -461,7 +533,7 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
                 x = Math.random() * (WINDOW_WIDTH * 3 / 4.0 - enemyImage1.getWidth() * enemySize) + WINDOW_WIDTH / 8.0 - enemyImage1.getWidth() * enemySize / 4.0;
                 y = Math.random() * (WINDOW_HEIGHT * 7 / 8.0 - enemyImage1.getHeight() * enemySize) + WINDOW_HEIGHT / 16.0 - enemyImage1.getHeight() * enemySize / 4.0;
             } while (player.getDistance(x + enemyImage1.getWidth() / 2.0, y + enemyImage1.getHeight() / 2.0) < 300);
-            sIndicators.add(new Indicator(enemyImage1, enemySize * 2, x, y, Math.random() * Math.PI * 2, 30, 0.1, 5, 0));
+            sIndicators.add(new Indicator(enemyImage1, enemySize * 2, x, y, Math.random() * Math.PI * 2, 1, 30, 0.1, 5, 0));
         }
         if (count.get(1) == 0) {
             count.set(1, (int) (Math.random() * 4 + 1));
@@ -476,14 +548,14 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
                 x = Math.random() * (WINDOW_WIDTH * 3 / 4.0 - enemyImage2.getWidth() * enemySize / 3) + WINDOW_WIDTH / 8.0 - enemyImage2.getWidth() * enemySize / 12.0;
                 y = Math.random() * (WINDOW_HEIGHT * 7 / 8.0 - enemyImage2.getHeight() * enemySize / 3) + WINDOW_HEIGHT / 16.0 - enemyImage2.getHeight() * enemySize / 12.0;
             } while (player.getDistance(x + enemyImage2.getWidth() / 2.0, y + enemyImage2.getHeight() / 2.0) < 300);
-            sIndicators.add(new Indicator(enemyImage2, enemySize * 2 / 3, x, y, Math.random() * Math.PI * 2, 30, 0.1, 5, 0));
-            if (counts.get(1) >= count.get(1) && score > 56) {
+            sIndicators.add(new Indicator(enemyImage2, enemySize * 2 / 3, x, y, Math.random() * Math.PI * 2, 1, 30, 0.1, 5, 0));
+            if (counts.get(1) >= count.get(1) && score > 81) {
                 for (int i = 0; i < Math.random() * 2 + enemyRandom; i++) {
                     do {
                         x = Math.random() * (WINDOW_WIDTH * 3 / 4.0 - enemyImage2.getWidth() * enemySize / 3) + WINDOW_WIDTH / 8.0 - enemyImage2.getWidth() * enemySize / 12.0;
                         y = Math.random() * (WINDOW_HEIGHT * 7 / 8.0 - enemyImage2.getHeight() * enemySize / 3) + WINDOW_HEIGHT / 16.0 - enemyImage2.getHeight() * enemySize / 12.0;
                     } while (player.getDistance(x + enemyImage2.getWidth() / 2.0, y + enemyImage2.getHeight() / 2.0) < 300);
-                    sIndicators.add(new Indicator(enemyImage2, enemySize * 2 / 3, x, y, Math.random() * Math.PI * 2, 30, 0.1, 5, 0));
+                    sIndicators.add(new Indicator(enemyImage2, enemySize * 2 / 3, x, y, Math.random() * Math.PI * 2, 1, 30, 0.1, 5, 0));
                 }
                 counts.set(1, 0);
                 count.set(1, (int) (Math.random() * 4 + 1));
@@ -504,7 +576,7 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
                     x = Math.random() * (WINDOW_WIDTH * 3 / 4.0 - enemyImage3.getWidth() * enemySize / 3) + WINDOW_WIDTH / 8.0 - enemyImage3.getWidth() * enemySize / 12.0;
                     y = Math.random() * (WINDOW_HEIGHT * 7 / 8.0 - enemyImage3.getHeight() * enemySize / 3) + WINDOW_HEIGHT / 16.0 - enemyImage3.getHeight() * enemySize / 12.0;
                 } while (player.getDistance(x + enemyImage3.getWidth() / 2.0, y + enemyImage3.getHeight() / 2.0) < 300);
-                sIndicators.add(new Indicator(enemyImage3, enemySize * 2 / 3, x, y, Math.random() * Math.PI * 2, 30, 0.1, 5, 0));
+                sIndicators.add(new Indicator(enemyImage3, enemySize * 2 / 3, x, y, Math.random() * Math.PI * 2, 1, 30, 0.1, 5, 0));
                 if (counts.get(2) >= count.get(2) && score > 143) {
                     for (int i = 0; i < Math.random() * 3 + enemyRandom; i++) {
                         Indicator temp = sIndicators.getLast();
@@ -512,7 +584,7 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
                             x = Math.random() * (WINDOW_WIDTH * 3 / 4.0 - enemyImage3.getWidth() * enemySize / 3) + WINDOW_WIDTH / 8.0 - enemyImage3.getWidth() * enemySize / 12.0;
                             y = Math.random() * (WINDOW_HEIGHT * 7 / 8.0 - enemyImage3.getHeight() * enemySize / 3) + WINDOW_HEIGHT / 16.0 - enemyImage3.getHeight() * enemySize / 12.0;
                         } while (player.getDistance(x + enemyImage3.getWidth() / 2.0, y + enemyImage3.getHeight() / 2.0) < 300 || temp.getDistance(x + enemyImage3.getWidth() / 2.0, y + enemyImage3.getHeight() / 2.0) > 100);
-                        sIndicators.add(new Indicator(enemyImage3, enemySize * 2 / 3, x, y, Math.random() * Math.PI * 2, 30, 0.1, 5, 0));
+                        sIndicators.add(new Indicator(enemyImage3, enemySize * 2 / 3, x, y, Math.random() * Math.PI * 2, 1, 30, 0.1, 5, 0));
                     }
                     counts.set(2, 0);
                     count.set(2, (int) (Math.random() * 3 + 3));
@@ -530,7 +602,7 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
                     x = Math.random() * (WINDOW_WIDTH * 3 / 4.0 - enemyImage4.getWidth() * enemySize / 2) + WINDOW_WIDTH / 8.0 - enemyImage4.getWidth() * enemySize / 8.0;
                     y = Math.random() * (WINDOW_HEIGHT * 7 / 8.0 - enemyImage4.getHeight() * enemySize / 2) + WINDOW_HEIGHT / 16.0 - enemyImage4.getHeight() * enemySize / 8.0;
                 } while (player.getDistance(x + enemyImage4.getWidth() / 2.0, y + enemyImage4.getHeight() / 2.0) < 300);
-                sIndicators.add(new Indicator(enemyImage4, enemySize, x, y, Math.random() * Math.PI * 2, 30, 0.1, 5, 0));
+                sIndicators.add(new Indicator(enemyImage4, enemySize, x, y, Math.random() * Math.PI * 2, 1, 30, 0.1, 5, 0));
             }
         }
         if (score > 95) {
@@ -543,7 +615,7 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
                     x = Math.random() * (WINDOW_WIDTH * 3 / 4.0 - enemyImage5.getWidth() * enemySize / 3) + WINDOW_WIDTH / 8.0 - enemyImage5.getWidth() * enemySize / 12.0;
                     y = Math.random() * (WINDOW_HEIGHT * 7 / 8.0 - enemyImage5.getHeight() * enemySize / 3) + WINDOW_HEIGHT / 16.0 - enemyImage5.getHeight() * enemySize / 12.0;
                 } while (player.getDistance(x + enemyImage5.getWidth() / 2.0, y + enemyImage5.getHeight() / 2.0) < 300);
-                sIndicators.add(new Indicator(enemyImage5, enemySize * 2 / 3, x, y, Math.random() * Math.PI * 2, 30, 0.1, 5, 0));
+                sIndicators.add(new Indicator(enemyImage5, enemySize * 2 / 3, x, y, Math.random() * Math.PI * 2, 1, 30, 0.1, 5, 0));
             }
         }
         if (score > 2) {
@@ -557,7 +629,7 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
                         x = Math.random() * (WINDOW_WIDTH * 3 / 4.0 - enemyImage6.getWidth() * enemySize / 2) + WINDOW_WIDTH / 8.0 - enemyImage6.getWidth() * enemySize / 8.0;
                         y = Math.random() * (WINDOW_HEIGHT * 7 / 8.0 - enemyImage6.getHeight() * enemySize / 2) + WINDOW_HEIGHT / 16.0 - enemyImage6.getHeight() * enemySize / 8.0;
                     } while (player.getDistance(x + enemyImage6.getWidth() / 2.0, y + enemyImage6.getHeight() / 2.0) < 300);
-                    sIndicators.add(new Indicator(enemyImage6, enemySize, x, y, Math.random() * Math.PI * 2, 30, 0.1, 5, 0));
+                    sIndicators.add(new Indicator(enemyImage6, enemySize, x, y, Math.random() * Math.PI * 2, 1, 30, 0.1, 5, 0));
                 }
             }
         }
@@ -571,7 +643,7 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
                     x = Math.random() * (WINDOW_WIDTH * 3 / 4.0 - enemyImage7.getWidth() * enemySize / 2) + WINDOW_WIDTH / 8.0 - enemyImage7.getWidth() * enemySize / 8.0;
                     y = Math.random() * (WINDOW_HEIGHT * 7 / 8.0 - enemyImage7.getHeight() * enemySize / 2) + WINDOW_HEIGHT / 16.0 - enemyImage7.getHeight() * enemySize / 8.0;
                 } while (player.getDistance(x + enemyImage7.getWidth() / 2.0, y + enemyImage7.getHeight() / 2.0) < 300);
-                sIndicators.add(new Indicator(enemyImage7, enemySize, x, y, Math.random() * Math.PI * 2, 30, 0.1, 5, 0));
+                sIndicators.add(new Indicator(enemyImage7, enemySize, x, y, Math.random() * Math.PI * 2, 1, 30, 0.1, 5, 0));
             }
         }
     }
@@ -616,8 +688,8 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
         }
     }
 
-    private void checkBulletEnemyCollision() {
-        ArrayList<Enemy> es = new ArrayList<>();
+    private void checkBulletEnemyCollision() throws IOException {
+        ArrayList<Enemy> es = new ArrayList<>(), re = new ArrayList<>();
         ArrayList<Bullet> bs = new ArrayList<>();
         Iterator<Bullet> i = bullets.iterator();
         while (i.hasNext()) {
@@ -626,28 +698,43 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
             while (i2.hasNext()) {
                 Enemy e = i2.next();
                 if (bulletEnemyCollision(b, e) && ((e.getkX() == 0 && e.getkY() == 0) || !b.hit())) {
-                    if (b.getSplinters() > 0) {
+                    if ((int) b.getSplinters() > 0) {
                         es.add(e);
-                        for (int s = 0; s < b.getSplinters(); s++) {
-                            bs.add(new Bullet(b.getImage(), e.updatexCenter(), e.updateyCenter(), b.getSize() * 0.75, b.getSpeed(), Math.random() * Math.PI * 2, b.getDamage() / 2, b.getKnockback() / 2, b.getBounces(), b.getSplinters(), b.getPenetrations(), b.getRicochets()));
+                        for (int s = 0; s < (int) b.getSplinters(); s++) {
+                            bs.add(new Bullet(b.getImage(), e.updatexCenter(), e.updateyCenter(), b.getSize() * 0.75, b.getSpeed(), Math.random() * Math.PI * 2, b.getDamage() / 2, b.getKnockback() / 2, b.getBounces(), b.getSplinters(), b.getPenetrations(), b.getRicochets(), b.getExplosionSize(), b.getWarps()));
                         }
                     }
-                    e.setHealth(e.getHealth() - b.getDamage());
-                    if (e.getHealth() <= 0) {
-                        gIndicators.add(new Indicator(e.getImage(), e.getSize(), e.getX(), e.getY(), e.getAngle(), 30, 1, 0, 2));
-                        gIndicators.getLast().hitFlash();
-                        xp += e.getXp();
-                        score += e.getXp();
-                        i2.remove();
+                    if (b.getExplosionSize() > 0) {
+                        gIndicators.add(new Indicator(explosionImage, b.getExplosionSize(), b.updatexCenter() - explosionImage.getWidth() * b.getExplosionSize() / 4, b.updateyCenter() - explosionImage.getHeight() * b.getExplosionSize() / 4, b.getAngle(), 0.5, 15, 1, 0, 2));
+                        for (Enemy enemy : enemies) {
+                            int temp = b.getWidth();
+                            b.setWidth((int) (explosionImage.getWidth() * b.getExplosionSize() / 1.75));
+                            b.setX(b.getX() - b.getWidth() / 2.0);
+                            if (bulletEnemyCollision(b, enemy)) {
+                                enemy.setHealth(enemy.getHealth() - b.getDamage());
+                                enemy.hitFlash();
+                                double a = Math.atan2(enemy.updateyCenter() - b.updateyCenter(), enemy.updatexCenter() - b.updatexCenter());
+                                enemy.addKnockback(b.getKnockback() * Math.cos(a), b.getKnockback() * Math.sin(a));
+                                if (enemy.getHealth() <= 0) {
+                                    re.add(enemy);
+                                }
+                            }
+                            b.setX(b.getX() + b.getWidth() / 2.0);
+                            b.setWidth(temp);
+                        }
                     } else {
+                        e.setHealth(e.getHealth() - b.getDamage());
                         e.hitFlash();
                         double a = Math.atan2(e.updateyCenter() - b.updateyCenter(), e.updatexCenter() - b.updatexCenter());
                         e.addKnockback(b.getKnockback() * Math.cos(a), b.getKnockback() * Math.sin(a));
+                        if (e.getHealth() <= 0) {
+                            re.add(e);
+                        }
                     }
-                    if (b.getPenetrations() <= 0 && b.getRicochets() <= 0) {
+                    if ((int) b.getPenetrations() <= 0 && (int) b.getRicochets() <= 0) {
                         i.remove();
                     }
-                    if (b.getRicochets() > 0) {
+                    if ((int) b.getRicochets() > 0) {
                         double d = Double.MAX_VALUE;
                         double min = d;
                         Enemy ce = null;
@@ -689,13 +776,25 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
         }
         //apply splinters
         for (int n = 0; n < bs.size(); n++) {
-            while (bulletEnemyCollision(bs.get(n), es.get(n / splinters))) {
+            while (bulletEnemyCollision(bs.get(n), es.get(n / (int) splinters))) {
                 bs.get(n).setX(bs.get(n).getX() + bs.get(n).getSpeed() * Math.cos(bs.get(n).getAngle()));
                 bs.get(n).setY(bs.get(n).getY() + bs.get(n).getSpeed() * Math.sin(bs.get(n).getAngle()));
             }
             bs.get(n).setX(bs.get(n).getX() + bs.get(n).getSpeed() * Math.cos(bs.get(n).getAngle()));
             bs.get(n).setY(bs.get(n).getY() + bs.get(n).getSpeed() * Math.sin(bs.get(n).getAngle()));
-            bullets.add(new Bullet(bs.get(n).getImage(), bs.get(n).getX(), bs.get(n).getY(), bs.get(n).getSize(), bs.get(n).getSpeed(), bs.get(n).getAngle(), bs.get(n).getDamage(), bs.get(n).getKnockback(), bs.get(n).getBounces(), 0, bs.get(n).getPenetrations(), bs.get(n).getRicochets()));
+            bullets.add(new Bullet(bs.get(n).getImage(), bs.get(n).getX(), bs.get(n).getY(), bs.get(n).getSize(), bs.get(n).getSpeed(), bs.get(n).getAngle(), bs.get(n).getDamage(), bs.get(n).getKnockback(), bs.get(n).getBounces(), 0, bs.get(n).getPenetrations(), bs.get(n).getRicochets(), bs.get(n).getExplosionSize() / 2, bs.get(n).getWarps()));
+        }
+        //remove enemies
+        Iterator<Enemy> ei = enemies.iterator();
+        while (ei.hasNext()) {
+            Enemy e = ei.next();
+            if (re.contains(e)) {
+                gIndicators.add(new Indicator(e.getImage(), e.getSize(), e.getX(), e.getY(), e.getAngle(), 1, 30, 1, 0, 2));
+                gIndicators.getLast().hitFlash();
+                xp += e.getXp();
+                score += e.getXp();
+                ei.remove();
+            }
         }
     }
 
@@ -759,7 +858,7 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
             if (enemyPlayerCollision(e)) {
                 player.hitFlash();
                 player.setHealth(player.getHealth() - e.getDamage());
-                gIndicators.add(new Indicator(e.getImage(), e.getSize(), e.getX(), e.getY(), e.getAngle(), 30, 1, 0, 2));
+                gIndicators.add(new Indicator(e.getImage(), e.getSize(), e.getX(), e.getY(), e.getAngle(), 1, 30, 1, 0, 2));
                 gIndicators.getLast().hitFlash();
                 i.remove();
             }
@@ -819,7 +918,7 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
             if (pointToRectCollision(new Point((int) eb.updatexCenter(), (int) eb.updateyCenter()), eb.getWidth() / 2.0, player.getRect())) {
                 player.hitFlash();
                 player.setHealth(player.getHealth() - eb.getDamage());
-                gIndicators.add(new Indicator(eb.getImage(), eb.getSize(), eb.getX(), eb.getY(), eb.getAngle(), 30, 1, 0, 2));
+                gIndicators.add(new Indicator(eb.getImage(), eb.getSize(), eb.getX(), eb.getY(), eb.getAngle(), 1, 30, 1, 0, 2));
                 gIndicators.getLast().hitFlash();
                 i.remove();
             }
@@ -846,7 +945,7 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
                 } else if (i.getImage() == enemyImage6) {
                     enemies.add(new Enemy(i.getImage(), true, i.getSize() / 2 * (Math.random() * enemyRandom / 10 + 1), i.getOx() + i.getoWidth() / 4.0, i.getOy() + i.getoHeight() / 4.0, i.getAngle(), 2, Math.random() * 0.5, enemyHealth * 3 * (Math.random() * enemyRandom / 10 + 1), enemyDamage * 1.4 * (Math.random() * enemyRandom / 10 + 1), 0.8, null, 0, 0, 0, 0, 0, 0, 0));
                 } else if (i.getImage() == enemyImage7) {
-                    enemies.add(new Enemy(i.getImage(), false, i.getSize() / 2 * (Math.random() * enemyRandom / 10 + 1), i.getOx() + i.getoWidth() / 4.0, i.getOy() + i.getoHeight() / 4.0, i.getAngle(), 2, enemySpeed * 2 * (Math.random() * enemyRandom / 10 + 1), enemyHealth * 1.5 * (Math.random() * enemyRandom / 10 + 1), enemyDamage * 1.6 * (Math.random() * enemyRandom / 10 + 1), 0.85, null, 0, 0, 0, 0, 0, 0, (int) spawnDelay));
+                    enemies.add(new Enemy(i.getImage(), false, i.getSize() / 2 * (Math.random() * enemyRandom / 10 + 1), i.getOx() + i.getoWidth() / 4.0, i.getOy() + i.getoHeight() / 4.0, i.getAngle(), 2.5, enemySpeed * 2 * (Math.random() * enemyRandom / 10 + 1), enemyHealth * 3.5 * (Math.random() * enemyRandom / 10 + 1), enemyDamage * 1.6 * (Math.random() * enemyRandom / 10 + 1), 0.85, null, 0, 0, 0, 0, 0, 0, (int) spawnDelay));
                 }
                 it.remove();
             }
@@ -863,12 +962,12 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
     }
 
     private void scale() {
-        spawnDelay = baseSpawnDelay * Math.pow(score + 100, -0.1);
-        enemySize = baseEnemySize * (1 + score / 50.0);
-        enemyHealth = baseEnemyHealth * (1 + score / 50.0);
-        enemySpeed = baseEnemySpeed * (1 + score / 100.0);
-        enemyDamage = baseEnemyDamage * (1 + score / 50.0);
-        enemyRandom = baseEnemyRandom * (1 + score / 50.0);
+        spawnDelay = baseSpawnDelay * Math.pow(score * 2 + 100, -0.1);
+        enemySize = baseEnemySize * (1 + Math.sqrt(score) / 500.0);
+        enemyHealth = baseEnemyHealth * (1 + score / 500.0);
+        enemySpeed = baseEnemySpeed * (1 + score / 1000.0);
+        enemyDamage = baseEnemyDamage * (1 + score / 500.0);
+        enemyRandom = baseEnemyRandom * (1 + score / 500.0);
     }
 
     private void level() {
@@ -883,7 +982,7 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
                     u = getUpgrade(55, 30, 10);
                 } while (n.contains(u));
                 n.add(u);
-                upgrades.add(new Upgrade(u.getImage(), u.getSize(), u.getX(), u.getY(), u.getPlayerSize(), u.getMaxHealth(), u.getHealth(), u.getReload(), u.getSpread(), u.getSpeed(), u.getProjectiles(), u.getBulletSize(), u.getBulletSpeed(), u.getDamage(), u.getKnockback(), u.getBounces(), u.getSplinters(), u.getPenetrations(), u.getRicochets(), u.getDesc()));
+                upgrades.add(new Upgrade(u.getImage(), u.getSize(), u.getX(), u.getY(), u.getPlayerSize(), u.getMaxHealth(), u.getHealth(), u.getRegeneration(), u.getReload(), u.getSpread(), u.getSpeed(), u.getProjectiles(), u.getBulletSize(), u.getBulletSpeed(), u.getDamage(), u.getKnockback(), u.getBounces(), u.getSplinters(), u.getPenetrations(), u.getRicochets(), u.getExplosionSize(), u.getWarps(), u.getDesc()));
                 upgrades.getLast().setX(upgrades.getLast().getX() * i);
                 JButton ub = new JButton(new ImageIcon(upgrades.getLast().getImage().getImage().getScaledInstance(upgrades.getLast().getWidth(), upgrades.getLast().getHeight(), Image.SCALE_SMOOTH)));
                 ub.setBounds((int) (WINDOW_WIDTH * i / 4.0 - upgrades.getLast().getWidth() / 2.0), (int) (WINDOW_HEIGHT / 4.0 - upgrades.getLast().getHeight() / 2.0), upgrades.getLast().getWidth(), upgrades.getLast().getHeight());
@@ -903,15 +1002,21 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
         } else if (random >= c && random < c + r) {
             return rareUpgrades.get((int) (Math.random() * rareUpgrades.size()));
         } else if (random >= c + r && random < c + r + e) {
-            return epicUpgrades.get((int) (Math.random() * epicUpgrades.size()));
+            do {
+                random = (int) (Math.random() * epicUpgrades.size());
+            } while (epicUpgrades.get((int) random).getDesc().equals("Reuse:\n+50% Max Health\n+30% Speed\n-10% Splinters\n-10% Bounces") && splinters <= 0 && bounces <= 0);
+            return epicUpgrades.get((int) random);
         }
-        return legendaryUpgrades.get((int) (Math.random() * legendaryUpgrades.size()));
+        do {
+            random = (int) (Math.random() * legendaryUpgrades.size());
+        } while (legendaryUpgrades.get((int) random).getDesc().equals("Processor:\n+25% Bullet Speed\n+25% Bounces\n+25% Penetrations\n+25% Ricochets") && bounces <= 0 && penetrations <= 0 && ricochets <= 0);
+        return epicUpgrades.get((int) random);
     }
 
     private void upgrade(Upgrade u) {
         if (u.getPlayerSize() != 0) {
             if (Math.abs(u.getPlayerSize()) < 0.01) {
-                player.setSize(player.getSize() + player.getSize() * u.getSize() * 100000);
+                player.setSize(player.getSize() + player.getSize() * u.getPlayerSize() * 100000);
             } else {
                 player.setSize(player.getSize() + u.getSize());
             }
@@ -928,6 +1033,13 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
                 player.setHealth(player.getHealth() + player.getHealth() * u.getHealth() * 100000);
             } else {
                 player.setHealth(player.getHealth() + u.getHealth());
+            }
+        }
+        if (u.getRegeneration() != 0) {
+            if (Math.abs(u.getRegeneration()) < 0.01) {
+                player.setRegeneration(player.getRegeneration() + player.getRegeneration() * u.getRegeneration() * 100000);
+            } else {
+                player.setRegeneration(player.getRegeneration() + u.getRegeneration());
             }
         }
         if (u.getReload() != 0) {
@@ -1014,6 +1126,27 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
                 ricochets += u.getRicochets();
             }
         }
+        if (u.getExplosionSize() != 0) {
+            if (Math.abs(u.getExplosionSize()) < 0.01) {
+                explosionSize += explosionSize * u.getExplosionSize() * 100000;
+            } else {
+                explosionSize += u.getExplosionSize();
+            }
+        }
+        if (u.getWarps() != 0) {
+            if (Math.abs(u.getWarps()) < 0.01) {
+                warps += warps * u.getWarps() * 100000;
+            } else {
+                warps += u.getWarps();
+            }
+        }
+        if (u.getDesc().equals("Reroll:\nReroll current\nupgrade selection")) {
+            xpReq--;
+            xp = xpReq;
+        }
+        if (player.getHealth() >= player.getMaxHealth()) {
+            player.setHealth(player.getMaxHealth());
+        }
         upgrades.remove(u);
         requestFocusInWindow();
         paused = false;
@@ -1027,24 +1160,26 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
         player.setMaxHealth(100);
         player.setHealth(100);
         player.setSize(0.5);
+        player.setSpeed(3);
         player.setSpread(0);
-        player.setReload(50);
-        player.setSpread(0);
+        player.setReload(100);
         player.setProjectiles(1);
         reload = (int) player.getReload() - 1;
-        spawnDelay = baseSpawnDelay;
+        warps = 0;
+        bulletSize = player.getSize() * 1.25;
+        bulletSpeed = 4;
+        damage = 40;
+        knockback = 2;
         bounces = 0;
         splinters = 0;
         penetrations = 0;
         ricochets = 0;
-        bulletSize = player.getSize() * 1.25;
-        bulletSpeed = 4;
-        damage = 20;
-        knockback = 2;
-        enemySize = 1;
-        enemySpeed = 1;
-        enemyHealth = 60;
-        enemyDamage = 10;
+        explosionSize = 0;
+        spawnDelay = baseSpawnDelay;
+        enemySize = baseEnemySize;
+        enemySpeed = baseEnemySpeed;
+        enemyHealth = baseEnemyHealth;
+        enemyDamage = baseEnemyDamage;
         first = true;
         requestFocusInWindow();
         timer.start();
@@ -1081,32 +1216,33 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
         }
         if ((int) player.getHealth() <= 0) {
             if (!gameOver) {
-                gIndicators.add(new Indicator(player.getImage(), player.getSize(), player.getX(), player.getY(), angleToMouse, 30, 1, 0, 2));
+                gIndicators.add(new Indicator(player.getImage(), player.getSize(), player.getX(), player.getY(), angleToMouse, 1, 30, 1, 0, 2));
             }
             gameOver = true;
         }
         try {
-            updateIndicators();
+            scale();
+            regenerate();
+            movePlayer();
+            checkAutofire();
             shoot();
+            moveBullets();
+            updateIndicators();
+            spawnEnemy();
+            moveEnemy();
+            for (Enemy enemy : enemies) {
+                enemyShoot(enemy);
+            }
+            moveEnemyBullets();
+            checkBulletEnemyCollision();
+            checkEnemyEnemyCollision();
+            checkEnemyBorderCollision();
+            checkEnemyPlayerCollision();
+            checkEnemyBulletPlayerCollision();
+            level();
         } catch (IOException ex) {
             throw new RuntimeException(ex);
         }
-        scale();
-        spawnEnemy();
-        moveEnemy();
-        movePlayer();
-        checkAutofire();
-        moveBullets();
-        for (Enemy enemy : enemies) {
-            enemyShoot(enemy);
-        }
-        moveEnemyBullets();
-        checkBulletEnemyCollision();
-        checkEnemyEnemyCollision();
-        checkEnemyBorderCollision();
-        checkEnemyPlayerCollision();
-        checkEnemyBulletPlayerCollision();
-        level();
         repaint();
     }
 }

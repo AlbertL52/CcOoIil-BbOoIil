@@ -3,15 +3,15 @@ import javax.swing.*;
 public class Upgrade {
     private ImageIcon image;
     private int width, height;
-    private int projectiles;
-    private int bounces, splinters, penetrations, ricochets;
+    private double projectiles;
+    private double bounces, splinters, penetrations, ricochets, warps;
     private double size;
     private double x, y;
-    private double playerSize, maxHealth, health, reload, spread, speed;
-    private double bulletSize, bulletSpeed, damage, knockback;
+    private double playerSize, maxHealth, health, regeneration, reload, spread, speed;
+    private double bulletSize, bulletSpeed, damage, knockback, explosionSize;
     private String desc;
 
-    public Upgrade(ImageIcon image, double size, double x, double y, double playerSize, double maxHealth, double health, double reload, double spread, double speed, int projectiles, double bulletSize, double bulletSpeed, double damage, double knockback, int bounces, int splinters, int penetrations, int ricochets, String desc) {
+    public Upgrade(ImageIcon image, double size, double x, double y, double playerSize, double maxHealth, double health, double regeneration, double reload, double spread, double speed, double projectiles, double bulletSize, double bulletSpeed, double damage, double knockback, double bounces, double splinters, double penetrations, double ricochets, double explosionSize, double warps, String desc) {
         this.image = image;
         this.size = size;
         width = (int) (image.getIconWidth() * size);
@@ -21,6 +21,7 @@ public class Upgrade {
         this.playerSize = playerSize;
         this.maxHealth = maxHealth;
         this.health = health;
+        this.regeneration = regeneration;
         this.reload = reload;
         this.spread = spread;
         this.speed = speed;
@@ -33,6 +34,8 @@ public class Upgrade {
         this.splinters = splinters;
         this.penetrations = penetrations;
         this.ricochets = ricochets;
+        this.explosionSize = explosionSize;
+        this.warps = warps;
         this.desc = desc;
     }
 
@@ -80,6 +83,10 @@ public class Upgrade {
         return (double) (int) (health * 100) / 100;
     }
 
+    public double getRegeneration() {
+        return regeneration;
+    }
+
     public double getReload() {
         return reload;
     }
@@ -104,7 +111,7 @@ public class Upgrade {
         return (double) (int) (speed * 100) / 100;
     }
 
-    public int getProjectiles() {
+    public double getProjectiles() {
         return projectiles;
     }
 
@@ -136,20 +143,28 @@ public class Upgrade {
         return (double) (int) (knockback * 100) / 100;
     }
 
-    public int getBounces() {
+    public double getBounces() {
         return bounces;
     }
 
-    public int getSplinters() {
+    public double getSplinters() {
         return splinters;
     }
 
-    public int getPenetrations() {
+    public double getPenetrations() {
         return penetrations;
     }
 
-    public int getRicochets() {
+    public double getRicochets() {
         return ricochets;
+    }
+
+    public double getExplosionSize() {
+        return explosionSize;
+    }
+
+    public double getWarps() {
+        return warps;
     }
 
     public String getDesc() {

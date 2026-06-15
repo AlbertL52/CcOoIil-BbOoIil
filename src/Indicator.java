@@ -13,9 +13,9 @@ public class Indicator {
     private double life;
     private double fade;
     private double threshold;
-    private double alpha = 1.0f;
+    private double alpha;
 
-    public Indicator(BufferedImage image, double size, double x, double y, double angle, double life, double fade, double threshold, int scale) {
+    public Indicator(BufferedImage image, double size, double x, double y, double angle, double alpha, double life, double fade, double threshold, int scale) {
         this.image = image;
         this.size = size;
         width = (int) (image.getWidth() * size * alpha);
@@ -31,6 +31,7 @@ public class Indicator {
         xCenter = x + ((double) width / 2);
         yCenter = y + ((double) height / 2);
         this.angle = angle;
+        this.alpha = alpha;
         this.life = life;
         this.fade = fade;
         this.threshold = threshold;
@@ -162,7 +163,7 @@ public class Indicator {
 
     public boolean shrink() {
         life -= fade;
-        alpha = Math.max(0, life / 30f);
+        alpha = Math.max(0, life / 30);
         x = ox + (oWidth - getsWidth()) / 2.0;
         y = oy + (oHeight - getsHeight()) / 2.0;
         return life <= threshold;
@@ -170,7 +171,7 @@ public class Indicator {
 
     public boolean grow() {
         life -= fade;
-        alpha = Math.max(0, life / 30f);
+        alpha = Math.max(0, life / 30);
         width += scale;
         height += scale;
         x = ox + (oWidth - width) / 2.0;

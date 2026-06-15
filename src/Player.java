@@ -6,17 +6,18 @@ public class Player {
     private int width, height;
     private int flashTime;
     private int maxFlash;
-    private int projectiles;
+    private double projectiles;
     private double size;
     private double x, y;
     private double xCenter, yCenter;
     private double speed;
     private double maxHealth, health;
+    private double regeneration;
     private double reload;
     private double spread;
     private Rectangle rect;
 
-    public Player(BufferedImage image, double size, double x, double y, int speed, double maxHealth, double reload, double spread, int projectiles) {
+    public Player(BufferedImage image, double size, double x, double y, int speed, double maxHealth, double regeneration, double reload, double spread, double projectiles) {
         this.image = image;
         this.size = size;
         width = (int) (image.getWidth() * size);
@@ -30,6 +31,7 @@ public class Player {
         this.speed = speed;
         this.maxHealth = maxHealth;
         health = maxHealth;
+        this.regeneration = regeneration;
         this.reload = reload;
         this.spread = spread;
         this.projectiles = projectiles;
@@ -92,6 +94,14 @@ public class Player {
         return health;
     }
 
+    public double getRegeneration() {
+        return regeneration;
+    }
+
+    public double getRoundedRegeneration() {
+        return (double) (int) (regeneration * 100) / 100;
+    }
+
     public double getReload() {
         return reload;
     }
@@ -108,8 +118,12 @@ public class Player {
         return (double) (int) (spread * 100) / 100;
     }
 
-    public int getProjectiles() {
+    public double getProjectiles() {
         return projectiles;
+    }
+
+    public double getRoundedProjectiles() {
+        return (double) (int) (projectiles * 100) / 100;
     }
 
     public Rectangle getRect() {
@@ -165,6 +179,10 @@ public class Player {
         this.health = health;
     }
 
+    public void setRegeneration(double regeneration) {
+        this.regeneration = regeneration;
+    }
+
     public void setReload(double reload) {
         this.reload = reload;
     }
@@ -173,7 +191,7 @@ public class Player {
         this.spread = spread;
     }
 
-    public void setProjectiles(int projectiles) {
+    public void setProjectiles(double projectiles) {
         this.projectiles = projectiles;
     }
 

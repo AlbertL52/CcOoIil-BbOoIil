@@ -3,7 +3,7 @@ import java.awt.image.BufferedImage;
 public class Bullet {
     private BufferedImage image;
     private int width, height;
-    private int bounces, splinters, penetrations, ricochets;
+    private double bounces, splinters, penetrations, ricochets, warps;
     private double size;
     private double x, y;
     private double xCenter, yCenter;
@@ -11,9 +11,10 @@ public class Bullet {
     private double speed, xSpeed, ySpeed;
     private double damage;
     private double knockback;
+    private double explosionSize;
     private boolean hit;
 
-    public Bullet(BufferedImage image, double x, double y, double size, double speed, double angle, double damage, double knockback, int bounces, int splinters, int penetrations, int ricochets) {
+    public Bullet(BufferedImage image, double x, double y, double size, double speed, double angle, double damage, double knockback, double bounces, double splinters, double penetrations, double ricochets, double explosionSize, double warps) {
         this.image = image;
         this.size = size;
         this.width = (int) (image.getWidth() * size);
@@ -32,6 +33,8 @@ public class Bullet {
         this.splinters = splinters;
         this.penetrations = penetrations;
         this.ricochets = ricochets;
+        this.explosionSize = explosionSize;
+        this.warps = warps;
         hit = false;
     }
 
@@ -93,20 +96,28 @@ public class Bullet {
         return knockback;
     }
 
-    public int getBounces() {
+    public double getBounces() {
         return bounces;
     }
 
-    public int getSplinters() {
+    public double getSplinters() {
         return splinters;
     }
 
-    public int getPenetrations() {
+    public double getPenetrations() {
         return penetrations;
     }
 
-    public int getRicochets() {
+    public double getRicochets() {
         return ricochets;
+    }
+
+    public double getExplosionSize() {
+        return explosionSize;
+    }
+
+    public double getWarps() {
+        return warps;
     }
 
     public boolean hit() {
@@ -169,23 +180,31 @@ public class Bullet {
         this.knockback = knockback;
     }
 
-    public void setBounces(int bounces) {
+    public void setBounces(double bounces) {
         this.bounces = bounces;
     }
 
-    public void setSplinters(int splinters) {
+    public void setSplinters(double splinters) {
         this.splinters = splinters;
     }
 
-    public void setPenetrations(int penetrations) {
+    public void setPenetrations(double penetrations) {
         this.penetrations = penetrations;
     }
 
-    public void setRicochets(int ricochets) {
+    public void setRicochets(double ricochets) {
         this.ricochets = ricochets;
     }
 
     public void setHit(boolean hit) {
         this.hit = hit;
+    }
+
+    public void setExplosionSize(double explosionSize) {
+        this.explosionSize = explosionSize;
+    }
+
+    public void setWarps(double warps) {
+        this.warps = warps;
     }
 }

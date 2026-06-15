@@ -3,7 +3,7 @@ import java.io.IOException;
 
 public class ArenaMain {
     public static void main(String[] args) throws IOException {
-        JFrame frame = new JFrame("idk");
+        JFrame frame = new JFrame("Tonk Game");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setSize(960, 580);
         frame.setLocationRelativeTo(null);
