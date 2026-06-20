@@ -6,14 +6,14 @@ public class Enemy {
     private BufferedImage image, bulletImage;
     private int width, height;
     private int flashTime, maxFlash;
-    private int count, counter;
+    private int count, counter, move;
     private double size;
     private double x, y;
     private double xp;
     private double xCenter, yCenter;
     private double angle;
     private double speed;
-    private double health;
+    private double health, maxHealth;
     private double damage;
     private double kX, kY, kbd;
     private int reloadTime, projectiles, bounces;
@@ -30,6 +30,7 @@ public class Enemy {
         this.angle = angle;
         this.speed = speed;
         this.health = health;
+        this.maxHealth = health;
         this.damage = damage;
         this.kbd = kbd;
         this.bulletImage = bulletImage;
@@ -44,6 +45,7 @@ public class Enemy {
         width = (int) (image.getWidth() * size);
         height = (int) (image.getHeight() * size);
         counter = 0;
+        move = 0;
         xCenter = x + ((double) width / 2);
         yCenter = y + ((double) height / 2);
         flashTime = 0;
@@ -89,6 +91,10 @@ public class Enemy {
         return counter;
     }
 
+    public int getMove() {
+        return move;
+    }
+
     public double getXp() {
         return xp;
     }
@@ -113,6 +119,10 @@ public class Enemy {
 
     public double getHealth() {
         return health;
+    }
+
+    public double getMaxHealth() {
+        return maxHealth;
     }
 
     public double getDamage() {
@@ -216,6 +226,10 @@ public class Enemy {
         this.counter = counter;
     }
 
+    public void setMove(int move) {
+        this.move = move;
+    }
+
     public void setXp(int xp) {
         this.xp = xp;
     }
@@ -238,6 +252,10 @@ public class Enemy {
 
     public void setHealth(double health) {
         this.health = health;
+    }
+
+    public void setMaxHealth(double maxHealth) {
+        this.maxHealth = maxHealth;
     }
 
     public void setDamage(double damage) {
